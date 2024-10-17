@@ -1,13 +1,18 @@
+// src/App.js
 import React from 'react';
-import Button from 'react-bootstrap/Button';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
+import Navigation from './components/navigation';
 
 function App() {
-    return (
-        <div className="App">
-            <Button variant="primary">Hello Bootstrap Button</Button>
-        </div>
-    );
+  return (
+    <div className="App">
+      <Navigation />
+      <header className="App-header">
+        <h1>Welcome to Meta Farmers</h1>
+        <p>This is your new app with a Bootstrap-based Navbar!</p>
+      </header>
+    </div>
+  );
 }
 
 export default App;
