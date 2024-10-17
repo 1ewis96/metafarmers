@@ -19,27 +19,6 @@ const Navigation = () => {
           <Link to="/contact">Contact</Link>
         </li>
       </ul>
-      <style jsx>{`
-        nav {
-          background: #333;
-          padding: 1rem;
-        }
-        ul {
-          list-style-type: none;
-          padding: 0;
-        }
-        li {
-          display: inline;
-          margin-right: 20px;
-        }
-        a {
-          color: white;
-          text-decoration: none;
-        }
-        a:hover {
-          text-decoration: underline;
-        }
-      `}</style>
     </nav>
   );
 };
