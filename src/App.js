@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
 import Navigation from './components/navigation';
+import Footer from './components/footer';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';          // Import Home component
 import Features from './pages/Features';  // Import Features component
@@ -18,6 +19,8 @@ function App() {
         </Routes>
       </div>
     </Router>
+	
+	<footer />
   );
 }
 
