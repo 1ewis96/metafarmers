@@ -6,7 +6,7 @@ const Home = () => {
   return (
     <>
       {/* Wrapper for the entire content */}
-      <div id="carouselExampleAutoplaying" className="carousel slide" data-bs-ride="carousel">
+      <div id="carouselExampleAutoplaying" className="carousel slide mt-n5" data-bs-ride="carousel">
         <div className="carousel-inner">
           <div className="carousel-item active">
             <img src="https://placehold.co/1500x400/EEE/31343C" className="d-block w-100" alt="First slide" />
