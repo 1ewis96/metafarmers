@@ -1,4 +1,5 @@
 import React from 'react';
+import Subnav from './components/subnav';
 
 const Home = () => {
   return (
@@ -6,6 +7,7 @@ const Home = () => {
       <h1>Home Page</h1>
       <p>Welcome to Meta Farmers!</p>
     </div>
+	<Subnav />
   );
 };
 
