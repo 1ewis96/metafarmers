@@ -6,6 +6,7 @@ import Footer from './components/footer';
 import Home from './pages/Home';          // Import Home component
 import Features from './pages/Features';  // Import Features component
 import Pricing from './pages/Pricing';    // Import Pricing component
+import NotFound from './errors/NotFound';   // Import NotFound component
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/home" element={<Home />} />        {/* Home route */}
           <Route path="/features" element={<Features />} /> {/* Features route */}
           <Route path="/pricing" element={<Pricing />} />  {/* Pricing route */}
+		  <Route path="*" element={<NotFound />} />       {/* Catch-all route for 404 */}
         </Routes>
         <Footer />
       </div>
