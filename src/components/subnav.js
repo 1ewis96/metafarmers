@@ -7,16 +7,19 @@ const Subnav = () => {
    
       <ul className="nav nav-underline">
         <li className="nav-item">
-          <Link className="nav-link active" aria-current="page" to="/home">Active</Link>
+          <Link className="nav-link active" aria-current="page" to="/home">Home</Link>
         </li>
         <li className="nav-item">
-          <Link className="nav-link" to="/features">Link</Link>
+          <Link className="nav-link" to="/community">Community</Link>
         </li>
         <li className="nav-item">
-          <Link className="nav-link" to="/pricing">Link</Link>
+          <Link className="nav-link" to="/shop">Shop</Link>
         </li>
-        <li className="nav-item">
-          <span className="nav-link disabled" aria-disabled="true">Disabled</span>
+		<li className="nav-item">
+          <Link className="nav-link" to="/playing">Playing {Name}</Link>
+        </li>
+		<li className="nav-item">
+          <Link className="nav-link" to="/marketplace">Marketplace</Link>
         </li>
       </ul>
 

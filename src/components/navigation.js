@@ -17,13 +17,7 @@ const Navigation = () => {
       <nav className="ms-auto">
         <ul className="nav">
           <li className="nav-item">
-            <Link className="nav-link" to="/">Home</Link>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/features">Features</Link>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/pricing">Pricing</Link>
+            <Link className="nav-link" to="/registration">Join Now</Link>
           </li>
         </ul>
       </nav>
