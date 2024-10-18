@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import placeholder from '../assets/placeholder.png';
 
 const Navigation = () => {
   return (
@@ -11,7 +12,10 @@ const Navigation = () => {
             <svg className="bi" width="40" height="32" role="img" aria-label="Bootstrap">
               <use xlinkHref="#bootstrap" />
             </svg>
-            <span className="fs-4 ms-2"><div className="logoPlaceholder"></div></span>
+            <span className="fs-4 ms-2">
+			<div className="logoPlaceholder" style={{ backgroundImage: `url(${placeholder})` }}>
+			</div>
+			</span>
           </Link>
         </div>
 
