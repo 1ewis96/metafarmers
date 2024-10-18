@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 const Navigation = () => {
   return (
     <div className="container">
-      <header className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+      <header className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom bg-dark">
         <div className="col-md-3 mb-2 mb-md-0">
           <Link to="/" className="d-inline-flex link-body-emphasis text-decoration-none">
             <svg className="bi" width="40" height="32" role="img" aria-label="Bootstrap">
