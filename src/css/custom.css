@@ -91,6 +91,9 @@ code {
       }
 	  
 	  .logoPlaceholder {
-		  height:100px;
-		  width:200px;
+		  background-size: contain; /* Ensures the entire image fits within the container */
+		  background-repeat: no-repeat; /* Prevents the image from repeating */
+		  background-position: center; /* Centers the image within the container */
+		  height: 100px;
+		  width: 200px;
 	  }
