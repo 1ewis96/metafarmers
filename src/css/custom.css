@@ -89,3 +89,9 @@ code {
       .bd-mode-toggle .dropdown-menu .active .bi {
         display: block !important;
       }
+	  
+	  .logoPlaceholder {
+		  background-image: url("/assets/placeholder.png");
+		  height:auto;
+		  width:auto;
+	  }
