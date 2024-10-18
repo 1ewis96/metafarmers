@@ -1,8 +1,8 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Navigation from './components/Navigation';
-import Footer from './components/Footer';
+import Navigation from './components/navigation';
+import Footer from './components/footer';
 import Home from './pages/Home';          // Import Home component
 import Features from './pages/Features';  // Import Features component
 import Pricing from './pages/Pricing';    // Import Pricing component
