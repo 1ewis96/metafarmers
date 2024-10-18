@@ -12,10 +12,10 @@ const Home = () => {
             <img src="https://placehold.co/1500x400/EEE/31343C" className="d-block w-100" alt="First slide" />
           </div>
           <div className="carousel-item">
-            <img src="https://placehold.co/1500x400/EEE/31343C" className="d-block w-100" alt="Second slide" />
+            <img src="https://placehold.co/1500x401/EEE/31343C" className="d-block w-100" alt="Second slide" />
           </div>
           <div className="carousel-item">
-            <img src="https://placehold.co/1500x400/EEE/31343C" className="d-block w-100" alt="Third slide" />
+            <img src="https://placehold.co/1500x402/EEE/31343C" className="d-block w-100" alt="Third slide" />
           </div>
         </div>
         <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
