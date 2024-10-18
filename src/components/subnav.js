@@ -16,7 +16,7 @@ const Subnav = () => {
           <Link className="nav-link" to="/shop">Shop</Link>
         </li>
 		<li className="nav-item">
-          <Link className="nav-link" to="/playing">Playing {Name}</Link>
+          <Link className="nav-link" to="/playing">Playing Info</Link>
         </li>
 		<li className="nav-item">
           <Link className="nav-link" to="/marketplace">Marketplace</Link>
