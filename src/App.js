@@ -17,10 +17,10 @@ function App() {
           <Route path="/features" element={<Features />} /> {/* Features route */}
           <Route path="/pricing" element={<Pricing />} />  {/* Pricing route */}
         </Routes>
+		<Footer />
       </div>
     </Router>
-	
-	<Footer />
+
   );
 }
 
