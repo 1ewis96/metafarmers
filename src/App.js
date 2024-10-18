@@ -1,7 +1,5 @@
 // src/App.js
 import React from 'react';
-import './js/bootstrap.min.js';
-import './css/bootstrap.min.css';
 import Navigation from './components/navigation';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';          // Import Home component
