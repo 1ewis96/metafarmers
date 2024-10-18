@@ -5,7 +5,7 @@ import placeholder from '../assets/placeholder.png';
 const Navigation = () => {
   return (
    <>
-      <header className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 border-bottom bg-dark">
+      <header className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 border-bottom bg-dark" style="positon:fixed;">
      
 		 <div className="col-md-3 mb-2 mb-md-0">
           <Link to="/" className="d-inline-flex link-body-emphasis text-decoration-none">
