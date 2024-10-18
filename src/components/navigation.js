@@ -1,4 +1,6 @@
+// src/components/navigation.js
 import React from 'react';
+
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 
 const Navigation = () => {

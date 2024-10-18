@@ -13,7 +13,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-      .bd-placeholder-img {
+bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
         -webkit-user-select: none;
@@ -21,13 +21,8 @@ code {
         user-select: none;
       }
 
-      @media (min-width: 768px) {
-        .bd-placeholder-img-lg {
-          font-size: 3.5rem;
-        }
-      }
 
-      .b-example-divider {
+b-example-divider {
         width: 100%;
         height: 3rem;
         background-color: rgba(0, 0, 0, .1);
@@ -36,25 +31,25 @@ code {
         box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
       }
 
-      .b-example-vr {
+b-example-vr {
         flex-shrink: 0;
         width: 1.5rem;
         height: 100vh;
       }
 
-      .bi {
+bi {
         vertical-align: -.125em;
         fill: currentColor;
       }
 
-      .nav-scroller {
+nav-scroller {
         position: relative;
         z-index: 2;
         height: 2.75rem;
         overflow-y: hidden;
       }
 
-      .nav-scroller .nav {
+nav-scroller nav {
         display: flex;
         flex-wrap: nowrap;
         padding-bottom: 1rem;
@@ -65,7 +60,7 @@ code {
         -webkit-overflow-scrolling: touch;
       }
 
-      .btn-bd-primary {
+btn-bd-primary {
         --bd-violet-bg: #712cf9;
         --bd-violet-rgb: 112.520718, 44.062154, 249.437846;
 
@@ -82,10 +77,10 @@ code {
         --bs-btn-active-border-color: #5a23c8;
       }
 
-      .bd-mode-toggle {
+bd-mode-toggle {
         z-index: 1500;
       }
 
-      .bd-mode-toggle .dropdown-menu .active .bi {
+bd-mode-toggle dropdown-menu active bi {
         display: block !important;
       }
