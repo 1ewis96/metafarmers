@@ -16,7 +16,7 @@ const Subnav = () => {
           <Link className="nav-link" to="/pricing">Link</Link>
         </li>
         <li className="nav-item">
-          <a className="nav-link disabled" aria-disabled="true">Disabled</a>
+          <span className="nav-link disabled" aria-disabled="true">Disabled</span>
         </li>
       </ul>
     </div>
