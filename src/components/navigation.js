@@ -24,7 +24,7 @@ const Navigation = () => {
         </div>
 
         <div className="col-md-3 text-end">
-    <Link className="btn btn-primary me-2" to="/login">Login/Link>
+    <Link className="btn btn-primary me-2" to="/login">Login</Link>
           <Link className="btn btn-primary me-5" to="/registration">Join Now</Link>
         </div>
 	
