@@ -1,10 +1,10 @@
 import React from 'react';
 import Subnav from '../components/subnav'; // Ensure correct import path
 import Cookies from 'js-cookie'; // Import js-cookie to manage cookies
-import { useHistory } from 'react-router-dom'; // Import useHistory for navigation
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 
 const Shop = () => {
-  const history = useHistory(); // Create a history instance for navigation
+  const navigate = useNavigate(); // Create a navigate instance for navigation
 
   const handleLogout = () => {
     // Remove the session cookie
@@ -13,8 +13,8 @@ const Shop = () => {
     // Optionally, inform the user that they have logged out
     alert('You have successfully logged out.');
 
-    // Redirect to the login page or any other page you want
-    history.push('/login'); // Adjust the path based on your routing setup
+    // Redirect to the login page
+    navigate('/login'); // Adjust the path based on your routing setup
   };
 
   return (

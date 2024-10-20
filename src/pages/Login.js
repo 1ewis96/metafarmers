@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom'; // Import useHistory for navigation
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import Subnav from '../components/subnav';
 import Cookies from 'js-cookie'; // Make sure to install this package using npm or yarn
 
@@ -7,7 +7,7 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const history = useHistory(); // Create a history instance for navigation
+  const navigate = useNavigate(); // Create a navigate instance for navigation
 
   const handleSubmit = async (event) => {
     event.preventDefault(); // Prevent default form submission
@@ -32,7 +32,7 @@ const Login = () => {
         alert('Login successful!'); // Optionally inform the user
 
         // Redirect to the home page
-        history.push('/home'); // Navigate to /home
+        navigate('/home'); // Navigate to /home
       } else {
         // Handle errors, e.g., invalid credentials
         setError('Login failed. Please check your username and password.');
