@@ -3,7 +3,7 @@ import Subnav from '../components/subnav'; // Ensure correct import path
 import Cookies from 'js-cookie'; // Import js-cookie to manage cookies
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 
-const Shop = () => {
+const Logout = () => {
   const navigate = useNavigate(); // Create a navigate instance for navigation
 
   const handleLogout = () => {
@@ -31,4 +31,4 @@ const Shop = () => {
   );
 };
 
-export default Shop;
+export default Logout;
