@@ -22,12 +22,12 @@ const Client = () => {
     }
 
     const buildUrl = "client/Build"; // Adjust this to match your actual build path
-    const loaderUrl = buildUrl + "/webgl_build.loader.js"; // Adjust to your actual loader file
+    const loaderUrl = buildUrl + "/gz_build.loader.js"; // Adjust to your actual loader file
 
     const config = {
-      dataUrl: buildUrl + "/webgl_build.data.br",
-      frameworkUrl: buildUrl + "/webgl_build.framework.js.br",
-      codeUrl: buildUrl + "/webgl_build.wasm.br",
+      dataUrl: buildUrl + "/gz_build.data.gz",
+      frameworkUrl: buildUrl + "/gz_build.framework.js.gz",
+      codeUrl: buildUrl + "/gz_build.wasm.gz",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "My project",
