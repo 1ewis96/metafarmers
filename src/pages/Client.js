@@ -4,8 +4,8 @@ import Subnav from '../components/subnav'; // Ensure correct import path
 const Client = () => {
   useEffect(() => {
     const canvas = document.getElementById('unity-canvas');
-    
-    // Banner display function (copied from the original HTML)
+
+    // Show banner function
     function unityShowBanner(msg, type) {
       const warningBanner = document.getElementById('unity-warning');
       const div = document.createElement('div');
@@ -21,8 +21,9 @@ const Client = () => {
       }
     }
 
-    const buildUrl = "client/Build"; // Adjust the path as necessary
-    const loaderUrl = buildUrl + "/webgl_build.loader.js"; // Replace with actual loader name
+    const buildUrl = "client/Build"; // Adjust this to match your actual build path
+    const loaderUrl = buildUrl + "/webgl_build.loader.js"; // Adjust to your actual loader file
+
     const config = {
       dataUrl: buildUrl + "/webgl_build.data.br",
       frameworkUrl: buildUrl + "/webgl_build.framework.js.br",
@@ -34,28 +35,37 @@ const Client = () => {
       showBanner: unityShowBanner,
     };
 
-    // Load the Unity loader script
+    // Load the Unity loader script dynamically
     const script = document.createElement('script');
     script.src = loaderUrl;
+
+    // When the script is loaded, call createUnityInstance
     script.onload = () => {
-      createUnityInstance(canvas, config, (progress) => {
-        const progressBar = document.getElementById('unity-progress-bar-full');
-        if (progressBar) {
-          progressBar.style.width = 100 * progress + "%";
-        }
-      }).then((unityInstance) => {
-        document.getElementById('unity-loading-bar').style.display = "none";
-        document.getElementById('unity-fullscreen-button').onclick = () => {
-          unityInstance.SetFullscreen(1);
-        };
-      }).catch((message) => {
-        alert(message);
-      });
+      if (window.createUnityInstance) {
+        window.createUnityInstance(canvas, config, (progress) => {
+          const progressBar = document.getElementById('unity-progress-bar-full');
+          if (progressBar) {
+            progressBar.style.width = 100 * progress + "%";
+          }
+        }).then((unityInstance) => {
+          document.getElementById('unity-loading-bar').style.display = "none";
+          document.getElementById('unity-fullscreen-button').onclick = () => {
+            unityInstance.SetFullscreen(1);
+          };
+        }).catch((message) => {
+          alert(message);
+        });
+      } else {
+        console.error("UnityLoader is not available.");
+      }
     };
+
+    // Error handling in case the script fails to load
     script.onerror = () => {
       console.error("Failed to load the Unity loader script.");
     };
 
+    // Append the loader script to the document
     document.body.appendChild(script);
 
     // Cleanup function
