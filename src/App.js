@@ -12,6 +12,7 @@ import Playing from './pages/Playing';          // Import Playing component
 import Marketplace from './pages/Marketplace';          // Import Marketplace component
 import Registration from './pages/Registration';          // Import Registration component
 import Login from './pages/Login';          // Import Login component
+import Logout from './pages/Logout';          // Import Logout component
 import NotFound from './errors/NotFound';   // Import NotFound component
 
 function App() {
