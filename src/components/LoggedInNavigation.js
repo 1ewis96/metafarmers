@@ -21,17 +21,17 @@ const LoggedInNavigation = () => {
         </div>
 
         <div className="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
-        <Link to="/home">Home</Link>
-        <Link to="/community">Community</Link>
-        <Link to="/shop">Shop</Link>
-        <Link to="/playing">Playing</Link>
-        <Link to="/marketplace">Marketplace</Link>
-        <Link to="/profile">Profile</Link>
+        <Link to="/home">Home</Link> 
+        <Link to="/community">Community</Link> 
+        <Link to="/shop">Shop</Link> 
+        <Link to="/playing">Playing</Link> 
+        <Link to="/marketplace">Marketplace</Link> 
+        <Link to="/profile">Profile</Link> 
         <Link to="/logout">Logout</Link>
         </div>
 
         <div className="col-md-3 text-end">
-    <Link className="btn btn-primary me-2" to="/login">Login</Link>
+    <Link className="btn btn-primary me-2" to="/logout">Logout</Link>
           <Link className="btn btn-primary me-5" to="/client">Client></Link>
         </div>
 	
