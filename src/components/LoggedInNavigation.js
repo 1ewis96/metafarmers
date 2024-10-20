@@ -27,7 +27,7 @@ const LoggedInNavigation = () => {
         <Link to="/playing">Playing</Link>
         <Link to="/marketplace">Marketplace</Link>
         <Link to="/profile">Profile</Link>
-        <Link to="/logout">Logout</Link><
+        <Link to="/logout">Logout</Link>
         </div>
 
         <div className="col-md-3 text-end">
