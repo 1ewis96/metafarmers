@@ -11,13 +11,15 @@ const Login = () => {
     event.preventDefault(); // Prevent default form submission
     setError(''); // Clear any previous errors
 
+    // Create a FormData object
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+
     try {
       const response = await fetch('https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+        body: formData, // Sending the FormData
       });
 
       const data = await response.json();
@@ -28,7 +30,7 @@ const Login = () => {
         alert('Login successful!'); // Optionally inform the user
         // Redirect or perform other actions here
       } else {
-        // Handle errors, e.g. invalid credentials
+        // Handle errors, e.g., invalid credentials
         setError('Login failed. Please check your username and password.');
       }
     } catch (error) {
@@ -49,7 +51,6 @@ const Login = () => {
             id="username"
             placeholder="username"
             className="form-control"
-			name="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -59,7 +60,6 @@ const Login = () => {
             id="password"
             placeholder="password"
             className="form-control"
-			name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
