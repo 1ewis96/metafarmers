@@ -8,7 +8,7 @@ const Client = () => {
     script.src = 'client/Build/metaFarmers.loader.js'; // Adjust the path to your loader script
 
     script.onload = () => {
-      // Check if UnityLoader is defined
+      console.log("Loader script loaded:", window.UnityLoader); // Check if UnityLoader is defined
       if (window.UnityLoader) {
         // Instantiate the Unity instance directly using the loader
         window.UnityLoader.instantiate('unityContainer', 'client/Build/metaFarmers.data');
