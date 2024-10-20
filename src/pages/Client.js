@@ -25,9 +25,9 @@ const Client = () => {
     const loaderUrl = buildUrl + "/gz_build.loader.js"; // Adjust to your actual loader file
 
     const config = {
-      dataUrl: buildUrl + "/gz_build.data.gz",
-      frameworkUrl: buildUrl + "/gz_build.framework.js.gz",
-      codeUrl: buildUrl + "/gz_build.wasm.gz",
+      dataUrl: buildUrl + "/webgl.data",
+      frameworkUrl: buildUrl + "/build.framework.js",
+      codeUrl: buildUrl + "/build.wasm",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "My project",
