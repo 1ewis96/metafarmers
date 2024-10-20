@@ -15,6 +15,7 @@ const Logout = () => {
 
     // Redirect to the login page
     navigate('/login'); // Adjust the path based on your routing setup
+	  window.location.reload(); // Reload the application
   };
 
   return (

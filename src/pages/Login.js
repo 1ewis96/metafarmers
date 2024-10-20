@@ -33,6 +33,7 @@ const Login = () => {
 
         // Redirect to the home page
         navigate('/home'); // Navigate to /home
+		  window.location.reload(); // Reload the application
       } else {
         // Handle errors, e.g., invalid credentials
         setError('Login failed. Please check your username and password.');
