@@ -78,7 +78,7 @@ const Client = () => {
     <>
       <Subnav />
       <div className="col-lg-8 mx-auto p-4 py-md-5">
-        <h1>Client</h1>
+        <h1>Client New</h1>
         <p>Your Unity WebGL game will appear below:</p>
         <div id="unity-container" className="unity-desktop">
           <canvas id="unity-canvas" width="960" height="600" tabIndex="-1"></canvas>
