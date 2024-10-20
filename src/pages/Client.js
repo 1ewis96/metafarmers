@@ -9,9 +9,10 @@ const Client = () => {
 
     script.onload = () => {
       // Instantiate the Unity instance directly using the loader
-      const unityInstance = window.UnityLoader.instantiate('unityContainer', 'client/Build/metaFarmers.data');
+      window.UnityLoader.instantiate('unityContainer', 'client/Build/metaFarmers.data');
     };
 
+    // Append the script to the body
     document.body.appendChild(script);
 
     // Cleanup function to remove the script on component unmount
