@@ -13,6 +13,7 @@ import Marketplace from './pages/Marketplace';          // Import Marketplace co
 import Registration from './pages/Registration';          // Import Registration component
 import Login from './pages/Login';          // Import Login component
 import Logout from './pages/Logout';          // Import Logout component
+import Client from './pages/Client';          // Import Logout component
 import NotFound from './errors/NotFound';   // Import NotFound component
 
 function App() {
@@ -38,7 +39,9 @@ function App() {
           <Route path="/registration" element={<Registration />} />  {/* Registration route */}
           <Route path="/login" element={<Login />} />  {/* Login route */}
           <Route path="/logout" element={<Logout />} />  {/* Logout route */}
-		  
+		  <Route path="/client" element={<Client />} />  {/* Logout route */}
+					
+					
           <Route path="*" element={<NotFound />} />       {/* Catch-all route for 404 */}
         </Routes>
         
