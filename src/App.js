@@ -22,7 +22,7 @@ function App() {
     <Router>
       <div className="App">
         {/* Render LoggedInNavigation if sessionKey exists, otherwise render Navigation */}
-        {sessionKey ? <Navigation /> : <LoggedInNavigation />}
+        {sessionKey ? <LoggedInNavigation /> : <Navigation />}
         
         <Routes>
           {/* Redirect from '/' to '/home' */}
