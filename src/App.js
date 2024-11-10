@@ -15,6 +15,7 @@ import Login from './pages/Login';          // Import Login component
 import Logout from './pages/Logout';          // Import Logout component
 import Client from './pages/Client';          // Import Logout component
 import NotFound from './errors/NotFound';   // Import NotFound component
+import Developer from './pages/Developer';   // Import NotFound component
 
 function App() {
   // Check if sessionKey exists in cookies
@@ -36,6 +37,7 @@ function App() {
           <Route path="/shop" element={<Shop />} />  {/* Shop route */}
           <Route path="/playing" element={<Playing />} />  {/* Playing route */}
           <Route path="/marketplace" element={<Marketplace />} />  {/* Marketplace route */}
+		  <Route path="/developer" element={<Developer />} />  {/* Developer route */}
           <Route path="/registration" element={<Registration />} />  {/* Registration route */}
           <Route path="/login" element={<Login />} />  {/* Login route */}
           <Route path="/logout" element={<Logout />} />  {/* Logout route */}

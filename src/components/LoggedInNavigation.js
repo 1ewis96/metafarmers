@@ -26,6 +26,7 @@ const LoggedInNavigation = () => {
         <Link to="/shop">Shop</Link> 
         <Link to="/playing">Playing</Link> 
         <Link to="/marketplace">Marketplace</Link> 
+		<Link to="/developer">Developer</Link> 
         <Link to="/profile">Profile</Link> 
         <Link to="/logout">Logout</Link>
         </div>
