@@ -58,14 +58,25 @@ const Client = () => {
     window.addEventListener('keyup', handleKeyUp);
 
     const movePlayer = () => {
-      if (keys['ArrowUp']) player.y -= 5;
-      if (keys['ArrowDown']) player.y += 5;
-      if (keys['ArrowLeft']) player.x -= 5;
-      if (keys['ArrowRight']) player.x += 5;
+      let newX = player.x;
+      let newY = player.y;
 
-      // Emit move event to the server
+      if (keys['ArrowUp']) newY -= 5;
+      if (keys['ArrowDown']) newY += 5;
+      if (keys['ArrowLeft']) newX -= 5;
+      if (keys['ArrowRight']) newX += 5;
+
+      // Update player position using setPlayer
+      setPlayer((prevPlayer) => {
+        if (prevPlayer.x !== newX || prevPlayer.y !== newY) {
+          return { ...prevPlayer, x: newX, y: newY };
+        }
+        return prevPlayer;
+      });
+
+      // Emit move event to the server only if the player moved
       if (player.id) {
-        socketRef.current.emit('move', { x: player.x, y: player.y });
+        socketRef.current.emit('move', { x: newX, y: newY });
       }
     };
 
