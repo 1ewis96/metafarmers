@@ -4,12 +4,15 @@ import io from 'socket.io-client';
 
 const Client = () => {
   const canvasRef = useRef(null);
+  const socketRef = useRef(null);  // Declare socket with useRef
   const [players, setPlayers] = useState({});
   const [player, setPlayer] = useState({ id: null, x: 0, y: 0, radius: 20, color: 'blue' });
 
   useEffect(() => {
     // Connect to the WebSocket server (replace with your actual server URL)
-    const socket = io('https://16.171.177.203'); // Use your IP or domain name
+    socketRef.current = io('https://16.171.177.203'); // Use your IP or domain name
+
+    const socket = socketRef.current;
 
     // Initialize player and set up event listeners
     socket.on('initialize', (allPlayers) => {
@@ -62,7 +65,7 @@ const Client = () => {
 
       // Emit move event to the server
       if (player.id) {
-        socket.emit('move', { x: player.x, y: player.y });
+        socketRef.current.emit('move', { x: player.x, y: player.y });
       }
     };
 
