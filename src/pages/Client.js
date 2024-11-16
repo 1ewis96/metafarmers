@@ -1,121 +1,145 @@
-import React, { useEffect, useRef, useState } from 'react';
-import Subnav from '../components/subnav'; // Ensure correct import path
+import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import Subnav from '../components/subnav'; // Ensure correct import path
+
+// Connect to the Node.js server using the provided IP
+const socket = io('https://13.49.67.160', {
+  transports: ['websocket'],
+});
 
 const Client = () => {
-  const canvasRef = useRef(null);
-  const socketRef = useRef(null);  // Declare socket with useRef
+  // Player's position and color state
+  const [player, setPlayer] = useState({
+    x: 300,
+    y: 300,
+    color: '#FF0000', // Random color will be set by the server
+  });
+  
   const [players, setPlayers] = useState({});
-  const [player, setPlayer] = useState({ id: null, x: 0, y: 0, radius: 20, color: 'blue' });
+  const [camera, setCamera] = useState({ x: player.x, y: player.y });
 
   useEffect(() => {
-    // Connect to the WebSocket server (replace with your actual server URL)
-    socketRef.current = io('https://16.171.177.203'); // Use your IP or domain name
-
-    const socket = socketRef.current;
-
-    // Initialize player and set up event listeners
+    // Initialize the player and listen for server updates
     socket.on('initialize', (allPlayers) => {
       setPlayers(allPlayers);
-      setPlayer((prevPlayer) => ({ ...prevPlayer, id: socket.id }));
     });
 
-    socket.on('playerJoined', (data) => {
-      setPlayers((prevPlayers) => ({ ...prevPlayers, [data.id]: data.position }));
+    // Update player position when other players move
+    socket.on('playerMoved', (playerData) => {
+      setPlayers((prev) => ({ ...prev, [playerData.id]: playerData }));
     });
 
-    socket.on('playerMoved', (data) => {
-      setPlayers((prevPlayers) => ({ ...prevPlayers, [data.id]: data.position }));
+    // Listen for new players joining
+    socket.on('newPlayer', (newPlayer) => {
+      setPlayers((prev) => ({ ...prev, [newPlayer.id]: newPlayer }));
     });
 
-    socket.on('playerLeft', (id) => {
-      setPlayers((prevPlayers) => {
-        const updatedPlayers = { ...prevPlayers };
-        delete updatedPlayers[id];
+    // Listen for player disconnection
+    socket.on('playerDisconnected', (playerId) => {
+      setPlayers((prev) => {
+        const updatedPlayers = { ...prev };
+        delete updatedPlayers[playerId];
         return updatedPlayers;
       });
     });
 
-    // Cleanup when component unmounts
+    // Cleanup on component unmount
     return () => {
-      socket.disconnect();
+      socket.off('initialize');
+      socket.off('playerMoved');
+      socket.off('newPlayer');
+      socket.off('playerDisconnected');
     };
   }, []);
 
-  // Canvas rendering and movement logic
+  // Handle keypresses (WASD movement)
+  const handleKeyDown = (event) => {
+    const direction = event.key.toUpperCase();
+    if (['W', 'A', 'S', 'D'].includes(direction)) {
+      socket.emit('move', direction); // Send the move direction to the server
+    }
+  };
+
+  // Update camera position to follow the player's ball
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 600;
-
-    // Handle key events for player movement
-    const keys = {};
-    const handleKeyDown = (e) => { keys[e.key] = true; };
-    const handleKeyUp = (e) => { keys[e.key] = false; };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    const movePlayer = () => {
-      let newX = player.x;
-      let newY = player.y;
-
-      if (keys['ArrowUp']) newY -= 5;
-      if (keys['ArrowDown']) newY += 5;
-      if (keys['ArrowLeft']) newX -= 5;
-      if (keys['ArrowRight']) newX += 5;
-
-      // Update player position using setPlayer
-      setPlayer((prevPlayer) => {
-        if (prevPlayer.x !== newX || prevPlayer.y !== newY) {
-          return { ...prevPlayer, x: newX, y: newY };
-        }
-        return prevPlayer;
-      });
-
-      // Emit move event to the server only if the player moved
-      if (player.id) {
-        socketRef.current.emit('move', { x: newX, y: newY });
-      }
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw all players
-      Object.keys(players).forEach((id) => {
-        const p = players[id];
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, player.radius, 0, Math.PI * 2);
-        ctx.fillStyle = id === player.id ? 'blue' : 'green';
-        ctx.fill();
-        ctx.closePath();
+    const cameraFollow = () => {
+      setCamera({
+        x: player.x - window.innerWidth / 2,
+        y: player.y - window.innerHeight / 2,
       });
     };
 
-    const gameLoop = () => {
-      movePlayer();
-      draw();
-      requestAnimationFrame(gameLoop);
-    };
+    cameraFollow(); // Call it once initially
+    const interval = setInterval(cameraFollow, 100); // Continuously update camera
 
-    gameLoop();
+    return () => clearInterval(interval); // Cleanup
+  }, [player]);
 
-    // Cleanup event listeners on component unmount
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [players, player]); // Dependency array to re-run on player and players changes
-
+  // Render the game grid and players
   return (
     <>
       <Subnav />
       <div className="col-lg-8 mx-auto p-4 py-md-5">
-        <h1>Client Game</h1>
-        <p>Interact with the game below</p>
-        <canvas ref={canvasRef}></canvas>
+        <h1>Game Client</h1>
+        <p>Use WASD keys to move your ball. See other players' movements!</p>
+      </div>
+
+      {/* Game Grid */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: '#eee',
+          overflow: 'hidden',
+        }}
+        tabIndex={0}
+        onKeyDown={handleKeyDown} // Listen for keydown events
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: `${-camera.y}px`,
+            left: `${-camera.x}px`,
+            width: '10000px', // Making the grid large enough to move around
+            height: '10000px',
+            backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px)',
+            backgroundSize: '50px 50px',
+          }}
+        >
+          {Object.keys(players).map((playerId) => {
+            const currentPlayer = players[playerId];
+            return (
+              <div
+                key={playerId}
+                style={{
+                  position: 'absolute',
+                  top: `${currentPlayer.y}px`,
+                  left: `${currentPlayer.x}px`,
+                  width: '30px',
+                  height: '30px',
+                  backgroundColor: currentPlayer.color,
+                  borderRadius: '50%',
+                  transition: 'top 0.05s, left 0.05s', // Smooth movement
+                }}
+              ></div>
+            );
+          })}
+
+          {/* Display the player's own ball */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `${player.y}px`,
+              left: `${player.x}px`,
+              width: '30px',
+              height: '30px',
+              backgroundColor: player.color,
+              borderRadius: '50%',
+              transition: 'top 0.05s, left 0.05s', // Smooth movement
+            }}
+          ></div>
+        </div>
       </div>
     </>
   );
