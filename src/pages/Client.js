@@ -8,7 +8,7 @@ const socket = io('https://13.49.67.160', {
 });
 
 const Client = () => {
-  // Player's position and color state
+  // Remove unused setPlayer state
   const [player, setPlayer] = useState({
     x: 300,
     y: 300,
