@@ -1,33 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import Cookies from 'js-cookie'; // Import js-cookie to handle cookies
 import Subnav from '../components/subnav'; // Ensure correct import path
+
+// Get the sessionKey from cookies
+const sessionKey = Cookies.get('sessionKey'); // Assuming 'sessionKey' is stored in the cookies
 
 // Connect to the Node.js server using the provided IP
 const socket = io('https://13.49.67.160', {
   transports: ['websocket'],
+  query: { sessionKey }, // Send the sessionKey to the server as a query parameter
 });
 
 const Client = () => {
   const [players, setPlayers] = useState({});
   const [camera, setCamera] = useState({ x: 0, y: 0 });
+  const [localPlayerId, setLocalPlayerId] = useState(null);
 
   useEffect(() => {
-    // Initialize the player and listen for server updates
-    socket.on('initialize', (allPlayers) => {
-      setPlayers(allPlayers);
+    // Listen for 'initialize' event when the server sends the local player's data
+    socket.on('initialize', (localPlayerData) => {
+      setLocalPlayerId(localPlayerData.id); // Store the local player's ID
+      setPlayers((prev) => ({ ...prev, [localPlayerData.id]: localPlayerData }));
     });
 
-    // Update player position when other players move
-    socket.on('playerMoved', (playerData) => {
-      setPlayers((prev) => ({ ...prev, [playerData.id]: playerData }));
-    });
-
-    // Listen for new players joining
+    // Listen for other players joining
     socket.on('newPlayer', (newPlayer) => {
       setPlayers((prev) => ({ ...prev, [newPlayer.id]: newPlayer }));
     });
 
-    // Listen for player disconnection
+    // Update players when they move
+    socket.on('playerMoved', (playerData) => {
+      setPlayers((prev) => ({ ...prev, [playerData.id]: playerData }));
+    });
+
+    // Handle player disconnection
     socket.on('playerDisconnected', (playerId) => {
       setPlayers((prev) => {
         const updatedPlayers = { ...prev };
@@ -36,11 +43,11 @@ const Client = () => {
       });
     });
 
-    // Cleanup on component unmount
+    // Cleanup when the component unmounts
     return () => {
       socket.off('initialize');
-      socket.off('playerMoved');
       socket.off('newPlayer');
+      socket.off('playerMoved');
       socket.off('playerDisconnected');
     };
   }, []);
@@ -53,17 +60,18 @@ const Client = () => {
     }
   };
 
-  // Focus the camera on the player's ball
+  // Update the camera to follow the local player's ball
   useEffect(() => {
-    // Get the first player (your ball)
-    const currentPlayer = Object.values(players)[0]; // Assuming the first player is the local player
-    if (currentPlayer) {
-      setCamera({
-        x: currentPlayer.x - window.innerWidth / 2, // Set the camera to the center of the player's ball
-        y: currentPlayer.y - window.innerHeight / 2,
-      });
+    if (localPlayerId) {
+      const currentPlayer = players[localPlayerId]; // Get the local player by ID
+      if (currentPlayer) {
+        setCamera({
+          x: currentPlayer.x - window.innerWidth / 2, // Center camera on player's ball
+          y: currentPlayer.y - window.innerHeight / 2,
+        });
+      }
     }
-  }, [players]); // This hook runs whenever `players` state changes
+  }, [players, localPlayerId]); // Recalculate camera position whenever players or localPlayerId changes
 
   return (
     <>
@@ -90,24 +98,24 @@ const Client = () => {
             position: 'absolute',
             top: `${-camera.y}px`,
             left: `${-camera.x}px`,
-            width: '10000px', // Making the grid large enough to move around
+            width: '10000px', // Large grid for scrolling
             height: '10000px',
             backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px)',
             backgroundSize: '50px 50px',
           }}
         >
           {Object.keys(players).map((playerId) => {
-            const currentPlayer = players[playerId];
+            const player = players[playerId];
             return (
               <div
                 key={playerId}
                 style={{
                   position: 'absolute',
-                  top: `${currentPlayer.y}px`,
-                  left: `${currentPlayer.x}px`,
+                  top: `${player.y}px`,
+                  left: `${player.x}px`,
                   width: '30px',
                   height: '30px',
-                  backgroundColor: currentPlayer.color,
+                  backgroundColor: player.color,
                   borderRadius: '50%',
                   transition: 'top 0.05s, left 0.05s', // Smooth movement
                 }}
