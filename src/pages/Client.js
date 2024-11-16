@@ -8,7 +8,7 @@ const socket = io('https://13.49.67.160', {
 });
 
 const Client = () => {
-  // Remove unused setPlayer state
+  // Remove setPlayer completely
   const [player, setPlayer] = useState({
     x: 300,
     y: 300,
