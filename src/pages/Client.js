@@ -8,16 +8,10 @@ const socket = io('https://13.49.67.160', {
 });
 
 const Client = () => {
-  // Remove setPlayer completely
-  const [player, setPlayer] = useState({
-    x: 300,
-    y: 300,
-    color: '#FF0000', // Random color will be set by the server
-  });
-  
+  // Removed setPlayer completely as it's not used
   const [players, setPlayers] = useState({});
-  const [camera, setCamera] = useState({ x: player.x, y: player.y });
-
+  const [camera, setCamera] = useState({ x: 300, y: 300 }); // Set initial camera position
+  
   useEffect(() => {
     // Initialize the player and listen for server updates
     socket.on('initialize', (allPlayers) => {
@@ -60,20 +54,17 @@ const Client = () => {
     }
   };
 
-  // Update camera position to follow the player's ball
+  // Update camera position to follow the player's ball (now based on first player)
   useEffect(() => {
-    const cameraFollow = () => {
+    // Get the first player (the current player's ball)
+    const currentPlayer = Object.values(players)[0];
+    if (currentPlayer) {
       setCamera({
-        x: player.x - window.innerWidth / 2,
-        y: player.y - window.innerHeight / 2,
+        x: currentPlayer.x - window.innerWidth / 2,
+        y: currentPlayer.y - window.innerHeight / 2,
       });
-    };
-
-    cameraFollow(); // Call it once initially
-    const interval = setInterval(cameraFollow, 100); // Continuously update camera
-
-    return () => clearInterval(interval); // Cleanup
-  }, [player]);
+    }
+  }, [players]); // Recalculate camera position when players change
 
   // Render the game grid and players
   return (
@@ -125,20 +116,6 @@ const Client = () => {
               ></div>
             );
           })}
-
-          {/* Display the player's own ball */}
-          <div
-            style={{
-              position: 'absolute',
-              top: `${player.y}px`,
-              left: `${player.x}px`,
-              width: '30px',
-              height: '30px',
-              backgroundColor: player.color,
-              borderRadius: '50%',
-              transition: 'top 0.05s, left 0.05s', // Smooth movement
-            }}
-          ></div>
         </div>
       </div>
     </>
