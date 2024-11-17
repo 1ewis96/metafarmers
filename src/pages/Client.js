@@ -5,6 +5,7 @@ import Subnav from '../components/subnav'; // Ensure correct import path
 
 // Get the sessionKey from cookies
 const sessionKey = Cookies.get('sessionKey'); // Assuming 'sessionKey' is stored in the cookies
+
 console.log('Session Key:', sessionKey); // Check if the sessionKey is correct
 
 // Connect to the Node.js server using the provided IP
@@ -17,15 +18,14 @@ const Client = () => {
   const [players, setPlayers] = useState({});
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [localPlayerId, setLocalPlayerId] = useState(null);
-  const [movementSpeed] = useState(10); // Set initial movement speed, no setter needed if it's static
-  const [currentGrid, setCurrentGrid] = useState({ x: 0, y: 0, z: 0 }); // Tracking grid position
-  const [isCreatorMode, setIsCreatorMode] = useState(false); // Toggle for creator mode
+  const [loading, setLoading] = useState(true); // State to track loading screen
 
   useEffect(() => {
     // Listen for 'initialize' event when the server sends the local player's data
     socket.on('initialize', (localPlayerData) => {
       setLocalPlayerId(localPlayerData.id); // Store the local player's ID
       setPlayers((prev) => ({ ...prev, [localPlayerData.id]: localPlayerData }));
+      setLoading(false); // Hide loading screen once data is received
     });
 
     // Listen for other players joining
@@ -60,12 +60,7 @@ const Client = () => {
   const handleKeyDown = (event) => {
     const direction = event.key.toUpperCase();
     if (['W', 'A', 'S', 'D'].includes(direction)) {
-      socket.emit('move', { direction, speed: movementSpeed }); // Send the move direction and speed to the server
-    }
-
-    // If B is pressed, toggle creator mode
-    if (event.key === 'B' || event.key === 'b') {
-      setIsCreatorMode((prev) => !prev);
+      socket.emit('move', direction); // Send the move direction to the server
     }
   };
 
@@ -82,14 +77,13 @@ const Client = () => {
     }
   }, [players, localPlayerId]); // Recalculate camera position whenever players or localPlayerId changes
 
-  // Update grid when mouse moves over the game area
-  const handleMouseMove = (event) => {
-    const gridSize = 50; // Each grid square is 50px
-    const gridX = Math.floor((event.clientX + camera.x) / gridSize);
-    const gridY = Math.floor((event.clientY + camera.y) / gridSize);
-
-    setCurrentGrid({ x: gridX, y: gridY, z: 0 }); // Assume 'z' is always 0 for now
-  };
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '24px' }}>
+        Loading...
+      </div>
+    ); // Show loading screen until data is loaded
+  }
 
   return (
     <>
@@ -97,11 +91,6 @@ const Client = () => {
       <div className="col-lg-8 mx-auto p-4 py-md-5">
         <h1>Game Client</h1>
         <p>Use WASD keys to move your ball. See other players' movements!</p>
-        <div>
-          <p>Player Position: X: {players[localPlayerId]?.x}, Y: {players[localPlayerId]?.y}</p>
-          <p>Mouse Position: X: {currentGrid.x}, Y: {currentGrid.y}</p>
-          <p>Movement Speed: {movementSpeed}</p>
-        </div>
       </div>
 
       {/* Game Grid */}
@@ -112,10 +101,12 @@ const Client = () => {
           height: '100vh',
           backgroundColor: '#eee',
           overflow: 'hidden',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
         tabIndex={0}
         onKeyDown={handleKeyDown} // Listen for keydown events
-        onMouseMove={handleMouseMove} // Track mouse position over the grid
       >
         <div
           style={{
@@ -124,55 +115,41 @@ const Client = () => {
             left: `${-camera.x}px`,
             width: '10000px', // Large grid for scrolling
             height: '10000px',
-            backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px), linear-gradient(to right, #ccc 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px)',
             backgroundSize: '50px 50px',
           }}
         >
           {Object.keys(players).map((playerId) => {
             const player = players[playerId];
             return (
-              <div
-                key={playerId}
-                style={{
-                  position: 'absolute',
-                  top: `${player.y}px`,
-                  left: `${player.x}px`,
-                  width: '30px',
-                  height: '30px',
-                  backgroundColor: player.color,
-                  borderRadius: '50%',
-                  transition: 'top 0.05s, left 0.05s', // Smooth movement
-                }}
-              >
-                <span
+              <div key={playerId} style={{ position: 'absolute', top: `${player.y}px`, left: `${player.x}px` }}>
+                {/* Player Ball */}
+                <div
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    backgroundColor: player.color,
+                    borderRadius: '50%',
+                    transition: 'top 0.05s, left 0.05s', // Smooth movement
+                  }}
+                ></div>
+                {/* Player's Session Key */}
+                <div
                   style={{
                     position: 'absolute',
                     top: '-20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
+                    left: '-5px',
                     fontSize: '12px',
                     color: 'black',
+                    textAlign: 'center',
+                    width: '40px',
                   }}
                 >
-                  {player.id.substring(0, 5)} {/* Display first 5 letters of sessionKey */}
-                </span>
+                  {player.id.slice(0, 5)} {/* Display the first 5 characters of the session key */}
+                </div>
               </div>
             );
           })}
-
-          {/* Show grid highlight if in creator mode */}
-          {isCreatorMode && (
-            <div
-              style={{
-                position: 'absolute',
-                top: `${currentGrid.y * 50 - camera.y}px`,
-                left: `${currentGrid.x * 50 - camera.x}px`,
-                width: '50px',
-                height: '50px',
-                border: '2px dashed red',
-              }}
-            />
-          )}
         </div>
       </div>
     </>
