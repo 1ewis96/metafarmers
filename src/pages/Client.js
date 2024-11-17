@@ -17,7 +17,7 @@ const Client = () => {
   const [players, setPlayers] = useState({});
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [localPlayerId, setLocalPlayerId] = useState(null);
-  const [movementSpeed, setMovementSpeed] = useState(20); // Movement speed state
+  const [movementSpeed, setMovementSpeed] = useState(10); // Set initial movement speed
   const [currentGrid, setCurrentGrid] = useState({ x: 0, y: 0, z: 0 }); // Tracking grid position
   const [isCreatorMode, setIsCreatorMode] = useState(false); // Toggle for creator mode
 
@@ -60,7 +60,7 @@ const Client = () => {
   const handleKeyDown = (event) => {
     const direction = event.key.toUpperCase();
     if (['W', 'A', 'S', 'D'].includes(direction)) {
-      socket.emit('move', direction); // Send the move direction to the server
+      socket.emit('move', { direction, speed: movementSpeed }); // Send the move direction and speed to the server
     }
 
     // If B is pressed, toggle creator mode
@@ -98,9 +98,9 @@ const Client = () => {
         <h1>Game Client</h1>
         <p>Use WASD keys to move your ball. See other players' movements!</p>
         <div>
-          <p>Movement Speed: {movementSpeed}</p>
           <p>Player Position: X: {players[localPlayerId]?.x}, Y: {players[localPlayerId]?.y}</p>
           <p>Mouse Position: X: {currentGrid.x}, Y: {currentGrid.y}</p>
+          <p>Movement Speed: {movementSpeed}</p>
         </div>
       </div>
 
