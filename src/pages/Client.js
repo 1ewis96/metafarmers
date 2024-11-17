@@ -17,7 +17,7 @@ const Client = () => {
   const [players, setPlayers] = useState({});
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [localPlayerId, setLocalPlayerId] = useState(null);
-  const [movementSpeed, setMovementSpeed] = useState(10); // Set initial movement speed
+  const [movementSpeed] = useState(10); // Set initial movement speed, no setter needed if it's static
   const [currentGrid, setCurrentGrid] = useState({ x: 0, y: 0, z: 0 }); // Tracking grid position
   const [isCreatorMode, setIsCreatorMode] = useState(false); // Toggle for creator mode
 
