@@ -8,10 +8,16 @@ const socket = io('https://13.49.67.160', {
   }
 });
 
+const gridSize = 50; // Size of each grid square in pixels
+const viewportWidth = window.innerWidth;
+const viewportHeight = window.innerHeight;
+
 const Client = () => {
   const [player, setPlayer] = useState(null);
   const [playerKey, setPlayerKey] = useState('');
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+
   const movementSpeed = 20; // Default movement speed
 
   // Handle socket connection and player initialization
@@ -22,44 +28,39 @@ const Client = () => {
       setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
     });
 
-    socket.on('newPlayer', (newPlayer) => {
-      console.log('New player joined:', newPlayer);
-    });
-
     socket.on('playerMoved', (updatedPlayer) => {
       if (updatedPlayer.id === player?.id) {
         setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
       }
     });
 
-    socket.on('playerDisconnected', (playerId) => {
-      console.log('Player disconnected:', playerId);
-      if (player && player.id === playerId) {
-        setPlayer(null);
-      }
-    });
-
     return () => {
       socket.off('initialize');
-      socket.off('newPlayer');
       socket.off('playerMoved');
-      socket.off('playerDisconnected');
     };
   }, [player]);
 
   // Handle player movement input (W, A, S, D)
   const handleKeyDown = (e) => {
-    let directions = [];
-    if (e.key === 'W') directions.push('W');
-    if (e.key === 'A') directions.push('A');
-    if (e.key === 'S') directions.push('S');
-    if (e.key === 'D') directions.push('D');
+    const directions = [];
+    if (e.key === 'w' || e.key === 'W') directions.push('W');
+    if (e.key === 'a' || e.key === 'A') directions.push('A');
+    if (e.key === 's' || e.key === 'S') directions.push('S');
+    if (e.key === 'd' || e.key === 'D') directions.push('D');
+
     if (directions.length > 0) {
       socket.emit('move', { directions, speed: movementSpeed });
     }
   };
 
-  // Handle player movement while key is pressed
+  // Update grid offset to center the player
+  useEffect(() => {
+    const offsetX = viewportWidth / 2 - playerPosition.x;
+    const offsetY = viewportHeight / 2 - playerPosition.y;
+    setGridOffset({ x: offsetX, y: offsetY });
+  }, [playerPosition]);
+
+  // Handle keydown events for movement
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -67,53 +68,103 @@ const Client = () => {
     };
   }, []);
 
-  return (
-    <div>
-      {player ? (
-        <div>
-          <div
-            style={{
-              position: 'absolute',
-              top: `${playerPosition.y}px`,
-              left: `${playerPosition.x}px`,
-              width: '50px',
-              height: '50px',
-              backgroundColor: player.color,
-              borderRadius: '50%',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                top: '-20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                color: 'white',
-                fontWeight: 'bold',
-              }}
-            >
-              {playerKey}
-            </div>
-          </div>
+  // Render the grid
+  const renderGrid = () => {
+    const cols = Math.ceil(viewportWidth / gridSize);
+    const rows = Math.ceil(viewportHeight / gridSize);
 
+    const gridLines = [];
+    for (let col = -1; col < cols + 1; col++) {
+      gridLines.push(
+        <div
+          key={`v-${col}`}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: `${col * gridSize + gridOffset.x}px`,
+            height: `${viewportHeight}px`,
+            width: '1px',
+            backgroundColor: '#555',
+          }}
+        />
+      );
+    }
+
+    for (let row = -1; row < rows + 1; row++) {
+      gridLines.push(
+        <div
+          key={`h-${row}`}
+          style={{
+            position: 'absolute',
+            top: `${row * gridSize + gridOffset.y}px`,
+            left: 0,
+            width: `${viewportWidth}px`,
+            height: '1px',
+            backgroundColor: '#555',
+          }}
+        />
+      );
+    }
+
+    return gridLines;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        backgroundColor: '#222',
+      }}
+    >
+      {renderGrid()}
+
+      {player && (
+        <div
+          style={{
+            position: 'absolute',
+            top: `${viewportHeight / 2}px`, // Centered on the screen
+            left: `${viewportWidth / 2}px`, // Centered on the screen
+            width: '50px',
+            height: '50px',
+            backgroundColor: player.color,
+            borderRadius: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
           <div
             style={{
               position: 'absolute',
-              bottom: '10px',
-              left: '10px',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              top: '-20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
               color: 'white',
-              padding: '10px',
+              fontWeight: 'bold',
             }}
           >
-            <h4>Player Info:</h4>
-            <p>Player ID: {player.id}</p>
-            <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
-            <p>Speed: {movementSpeed}</p>
+            {playerKey}
           </div>
         </div>
-      ) : (
-        <div>Loading...</div>
+      )}
+
+      {player && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+          }}
+        >
+          <h4>Player Info:</h4>
+          <p>Player ID: {player.id}</p>
+          <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
+          <p>Speed: {movementSpeed}</p>
+        </div>
       )}
     </div>
   );
