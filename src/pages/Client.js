@@ -8,7 +8,7 @@ const socket = io('https://13.49.67.160', {
   }
 });
 
-const gridSize = 50; // Size of each grid square in pixels
+const gridSize = 100; // Size of each grid cell in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
@@ -19,6 +19,12 @@ const Client = () => {
   const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
 
   const movementSpeed = 20; // Default movement speed
+
+  // Calculate the current cell based on player position
+  const currentCell = {
+    x: Math.floor(playerPosition.x / gridSize),
+    y: Math.floor(playerPosition.y / gridSize),
+  };
 
   // Handle socket connection and player initialization
   useEffect(() => {
@@ -68,42 +74,45 @@ const Client = () => {
     };
   }, []);
 
-  // Render the grid
+  // Render the grid with cell labels
   const renderGrid = () => {
     const cols = Math.ceil(viewportWidth / gridSize);
     const rows = Math.ceil(viewportHeight / gridSize);
 
     const gridLines = [];
-    for (let col = -1; col < cols + 1; col++) {
-      gridLines.push(
-        <div
-          key={`v-${col}`}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: `${col * gridSize + gridOffset.x}px`,
-            height: `${viewportHeight}px`,
-            width: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
-    }
+    for (let col = -cols / 2; col < cols / 2; col++) {
+      for (let row = -rows / 2; row < rows / 2; row++) {
+        const cellX = currentCell.x + col;
+        const cellY = currentCell.y + row;
 
-    for (let row = -1; row < rows + 1; row++) {
-      gridLines.push(
-        <div
-          key={`h-${row}`}
-          style={{
-            position: 'absolute',
-            top: `${row * gridSize + gridOffset.y}px`,
-            left: 0,
-            width: `${viewportWidth}px`,
-            height: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
+        gridLines.push(
+          <div
+            key={`cell-${cellX}-${cellY}`}
+            style={{
+              position: 'absolute',
+              top: `${gridOffset.y + row * gridSize}px`,
+              left: `${gridOffset.x + col * gridSize}px`,
+              width: `${gridSize}px`,
+              height: `${gridSize}px`,
+              border: '1px solid #555',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Render cell coordinates */}
+            <span
+              style={{
+                fontSize: '10px',
+                color: '#999',
+                position: 'absolute',
+                bottom: '2px',
+                right: '2px',
+              }}
+            >
+              {`${cellX}, ${cellY}`}
+            </span>
+          </div>
+        );
+      }
     }
 
     return gridLines;
@@ -162,7 +171,8 @@ const Client = () => {
         >
           <h4>Player Info:</h4>
           <p>Player ID: {player.id}</p>
-          <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
+          <p>Position: X: {playerPosition.x.toFixed(2)} Y: {playerPosition.y.toFixed(2)}</p>
+          <p>Current Cell: {`${currentCell.x}, ${currentCell.y}`}</p>
           <p>Speed: {movementSpeed}</p>
         </div>
       )}
