@@ -248,6 +248,29 @@ const Client = () => {
     return null;
   };
 
+  // Render the cell info panel (new addition)
+  const renderCellInfoPanel = () => {
+    if (cellInfo) {
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '10px',
+            right: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+            zIndex: 10,
+          }}
+        >
+          <h4>Cell Info:</h4>
+          <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+  
   return (
     <div
       style={{
@@ -262,6 +285,7 @@ const Client = () => {
       {renderPlayer()}
       {renderPlayerInfo()}
       {renderHazardBanner()}
+	  {renderCellInfoPanel()}
     </div>
   );
 };
