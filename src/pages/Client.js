@@ -20,6 +20,9 @@ const Client = () => {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [cellInfo, setCellInfo] = useState(null);
   const [buildMode, setBuildMode] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [health, setHealth] = useState(100);  // Placeholder health
+  const [armor, setArmor] = useState(50);  // Placeholder armor
   
   const movementSpeed = 20; // Default movement speed
 
@@ -248,29 +251,46 @@ const Client = () => {
     return null;
   };
 
-  // Render the cell info panel (new addition)
-  const renderCellInfoPanel = () => {
-    if (cellInfo) {
-      return (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            right: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '10px',
-            zIndex: 10,
-          }}
-        >
-          <h4>Cell Info:</h4>
-          <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
-        </div>
-      );
-    }
-    return null;
+  // Render the item info panel
+  const renderItemInfoPanel = () => {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '10px',
+          right: '10px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
+          padding: '10px',
+        }}
+      >
+        <h4>Item Info:</h4>
+        {/* Placeholder content */}
+        <p>No items selected.</p>
+      </div>
+    );
   };
-  
+
+  // Render the health and armor info panel
+  const renderHealthArmor = () => {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: '300px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
+          padding: '10px',
+        }}
+      >
+        <h4>Health / Armor:</h4>
+        <p>Health: {health}</p>
+        <p>Armor: {armor}</p>
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -284,8 +304,10 @@ const Client = () => {
       {renderGrid()}
       {renderPlayer()}
       {renderPlayerInfo()}
+      {renderCellInfoPanel()}
+      {renderItemInfoPanel()}
+      {renderHealthArmor()}
       {renderHazardBanner()}
-	  {renderCellInfoPanel()}
     </div>
   );
 };
