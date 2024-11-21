@@ -69,45 +69,50 @@ useEffect(() => {
   }, []);
 
   // Render the grid
-  const renderGrid = () => {
-    const cols = Math.ceil(viewportWidth / gridSize);
-    const rows = Math.ceil(viewportHeight / gridSize);
+const renderGrid = () => {
+  const cols = Math.ceil(viewportWidth / gridSize);
+  const rows = Math.ceil(viewportHeight / gridSize);
 
-    const gridLines = [];
-    for (let col = -1; col < cols + 1; col++) {
-      gridLines.push(
-        <div
-          key={`v-${col}`}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: `${col * gridSize + gridOffset.x}px`,
-            height: `${viewportHeight}px`,
-            width: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
-    }
+  const gridLines = [];
 
-    for (let row = -1; row < rows + 1; row++) {
-      gridLines.push(
-        <div
-          key={`h-${row}`}
-          style={{
-            position: 'absolute',
-            top: `${row * gridSize + gridOffset.y}px`,
-            left: 0,
-            width: `${viewportWidth}px`,
-            height: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
-    }
+  // Calculate the top-left corner of the grid (anchor point)
+  const startX = Math.floor(playerPosition.x / gridSize) * gridSize - (cols / 2) * gridSize;
+  const startY = Math.floor(playerPosition.y / gridSize) * gridSize - (rows / 2) * gridSize;
 
-    return gridLines;
-  };
+  for (let col = -1; col < cols + 1; col++) {
+    gridLines.push(
+      <div
+        key={`v-${col}`}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: `${startX + col * gridSize - playerPosition.x + viewportWidth / 2}px`,
+          height: `${viewportHeight}px`,
+          width: '1px',
+          backgroundColor: '#555',
+        }}
+      />
+    );
+  }
+
+  for (let row = -1; row < rows + 1; row++) {
+    gridLines.push(
+      <div
+        key={`h-${row}`}
+        style={{
+          position: 'absolute',
+          top: `${startY + row * gridSize - playerPosition.y + viewportHeight / 2}px`,
+          left: 0,
+          width: `${viewportWidth}px`,
+          height: '1px',
+          backgroundColor: '#555',
+        }}
+      />
+    );
+  }
+
+  return gridLines;
+};
 
   return (
     <div
