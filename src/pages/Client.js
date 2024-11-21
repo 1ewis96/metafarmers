@@ -54,11 +54,11 @@ const Client = () => {
   };
 
   // Update grid offset to center the player
-  useEffect(() => {
-    const offsetX = viewportWidth / 2 - playerPosition.x;
-    const offsetY = viewportHeight / 2 - playerPosition.y;
-    setGridOffset({ x: offsetX, y: offsetY });
-  }, [playerPosition]);
+useEffect(() => {
+  const offsetX = viewportWidth / 2 - (Math.floor(playerPosition.x / gridSize) * gridSize) - (playerPosition.x % gridSize);
+  const offsetY = viewportHeight / 2 - (Math.floor(playerPosition.y / gridSize) * gridSize) - (playerPosition.y % gridSize);
+  setGridOffset({ x: offsetX, y: offsetY });
+}, [playerPosition]);
 
   // Handle keydown events for movement
   useEffect(() => {
