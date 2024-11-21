@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 const socket = io('https://13.49.67.160', {
   query: {
     sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
-  }
+  },
 });
 
 const gridSize = 50; // Size of each grid square in pixels
@@ -17,10 +17,42 @@ const Client = () => {
   const [playerKey, setPlayerKey] = useState('');
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
   const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  
   const movementSpeed = 20; // Default movement speed
 
-  // Handle socket connection and player initialization
+  // Handle mouse move to track hovered cell
+  const handleMouseMove = (e) => {
+    const mouseX = e.clientX - gridOffset.x;
+    const mouseY = e.clientY - gridOffset.y;
+    const cellX = Math.floor(mouseX / gridSize);
+    const cellY = Math.floor(mouseY / gridSize);
+    setHoveredCell({ x: cellX, y: cellY });
+  };
+
+  // Handle key press for movement (W, A, S, D) and build mode (B)
+  const handleKeyDown = (e) => {
+    if (e.key === 'b' || e.key === 'B') {
+      setBuildMode((prev) => !prev);
+    }
+    if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+      socket.emit('move', { directions: [e.key.toUpperCase()], speed: movementSpeed });
+    }
+  };
+
+  // Handle click to open the cell info panel
+  const handleCellClick = () => {
+    if (hoveredCell) {
+      setCellInfo({
+        x: hoveredCell.x,
+        y: hoveredCell.y,
+      });
+    }
+  };
+
+  // Socket connection: handle player initialization and movement updates
   useEffect(() => {
     socket.on('initialize', (playerData) => {
       setPlayer(playerData);
@@ -40,100 +72,127 @@ const Client = () => {
     };
   }, [player]);
 
-  // Handle player movement input (W, A, S, D)
-  const handleKeyDown = (e) => {
-    const directions = [];
-    if (e.key === 'w' || e.key === 'W') directions.push('W');
-    if (e.key === 'a' || e.key === 'A') directions.push('A');
-    if (e.key === 's' || e.key === 'S') directions.push('S');
-    if (e.key === 'd' || e.key === 'D') directions.push('D');
-
-    if (directions.length > 0) {
-      socket.emit('move', { directions, speed: movementSpeed });
-    }
-  };
-
   // Update grid offset to center the player
-useEffect(() => {
-  const offsetX = viewportWidth / 2 - (Math.floor(playerPosition.x / gridSize) * gridSize) - (playerPosition.x % gridSize);
-  const offsetY = viewportHeight / 2 - (Math.floor(playerPosition.y / gridSize) * gridSize) - (playerPosition.y % gridSize);
-  setGridOffset({ x: offsetX, y: offsetY });
-}, [playerPosition]);
-
-  // Handle keydown events for movement
   useEffect(() => {
+    if (playerPosition) {
+      const offsetX = viewportWidth / 2 - (Math.floor(playerPosition.x / gridSize) * gridSize) - (playerPosition.x % gridSize);
+      const offsetY = viewportHeight / 2 - (Math.floor(playerPosition.y / gridSize) * gridSize) - (playerPosition.y % gridSize);
+      setGridOffset({ x: offsetX, y: offsetY });
+    }
+  }, [playerPosition]);
+
+  // Add event listeners for mouse and keydown events
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('click', handleCellClick);
     window.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleCellClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
-const calculateCurrentCell = (x, y) => {
-  const cellX = Math.floor(x / gridSize); // Calculate column
-  const cellY = Math.floor(y / gridSize); // Calculate row
-  return { cellX, cellY };
-};
+  // Render hazard banner when build mode is active
+  const renderHazardBanner = () => {
+    if (buildMode) {
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 0, 0, 0.2)', // Semi-transparent red
+            border: '5px dashed red',
+            zIndex: 5,
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              left: '10px',
+              fontSize: '18px',
+              color: 'red',
+              fontWeight: 'bold',
+            }}
+          >
+            WARNING: Build Mode Active
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
+  // Render the grid with lines and highlighted cell
+  const renderGrid = () => {
+    const cols = Math.ceil(viewportWidth / gridSize);
+    const rows = Math.ceil(viewportHeight / gridSize);
 
-  // Render the grid
-const renderGrid = () => {
-  const cols = Math.ceil(viewportWidth / gridSize);
-  const rows = Math.ceil(viewportHeight / gridSize);
+    const gridLines = [];
 
-  const gridLines = [];
+    // Render vertical and horizontal lines
+    for (let col = -1; col < cols + 1; col++) {
+      gridLines.push(
+        <div
+          key={`v-${col}`}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: `${col * gridSize + gridOffset.x}px`,
+            height: `${viewportHeight}px`,
+            width: '1px',
+            backgroundColor: '#555',
+          }}
+        />
+      );
+    }
 
-  // Calculate the top-left corner of the grid (anchor point)
-  const startX = Math.floor(playerPosition.x / gridSize) * gridSize - (cols / 2) * gridSize;
-  const startY = Math.floor(playerPosition.y / gridSize) * gridSize - (rows / 2) * gridSize;
+    for (let row = -1; row < rows + 1; row++) {
+      gridLines.push(
+        <div
+          key={`h-${row}`}
+          style={{
+            position: 'absolute',
+            top: `${row * gridSize + gridOffset.y}px`,
+            left: 0,
+            width: `${viewportWidth}px`,
+            height: '1px',
+            backgroundColor: '#555',
+          }}
+        />
+      );
+    }
 
-  for (let col = -1; col < cols + 1; col++) {
-    gridLines.push(
-      <div
-        key={`v-${col}`}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: `${startX + col * gridSize - playerPosition.x + viewportWidth / 2}px`,
-          height: `${viewportHeight}px`,
-          width: '1px',
-          backgroundColor: '#555',
-        }}
-      />
-    );
-  }
+    // Highlight the hovered cell
+    if (hoveredCell) {
+      gridLines.push(
+        <div
+          key={`highlight-${hoveredCell.x}-${hoveredCell.y}`}
+          style={{
+            position: 'absolute',
+            top: `${hoveredCell.y * gridSize + gridOffset.y}px`,
+            left: `${hoveredCell.x * gridSize + gridOffset.x}px`,
+            width: `${gridSize}px`,
+            height: `${gridSize}px`,
+            border: '2px solid yellow',
+            zIndex: 2, // Ensure it's on top of other elements
+          }}
+        />
+      );
+    }
 
-  for (let row = -1; row < rows + 1; row++) {
-    gridLines.push(
-      <div
-        key={`h-${row}`}
-        style={{
-          position: 'absolute',
-          top: `${startY + row * gridSize - playerPosition.y + viewportHeight / 2}px`,
-          left: 0,
-          width: `${viewportWidth}px`,
-          height: '1px',
-          backgroundColor: '#555',
-        }}
-      />
-    );
-  }
+    return gridLines;
+  };
 
-  return gridLines;
-};
-
-  return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        backgroundColor: '#222',
-      }}
-    >
-      {renderGrid()}
-
-      {player && (
+  // Render the player on the screen
+  const renderPlayer = () => {
+    if (player) {
+      return (
         <div
           style={{
             position: 'absolute',
@@ -159,26 +218,50 @@ const renderGrid = () => {
             {playerKey}
           </div>
         </div>
-      )}
-{player && (
-  <div
-    style={{
-      position: 'absolute',
-      bottom: '10px',
-      left: '10px',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      color: 'white',
-      padding: '10px',
-    }}
-  >
-    <h4>Player Info:</h4>
-    <p>Player ID: {player.id}</p>
-    <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
-    <p>Current Cell: X: {Math.floor(playerPosition.x / gridSize)} Y: {Math.floor(playerPosition.y / gridSize)}</p>
-    <p>Speed: {movementSpeed}</p>
-  </div>
-)}
+      );
+    }
+    return null;
+  };
 
+  // Render the player info panel
+  const renderPlayerInfo = () => {
+    if (player) {
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+          }}
+        >
+          <h4>Player Info:</h4>
+          <p>Player ID: {player.id}</p>
+          <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
+          <p>Current Cell: X: {Math.floor(playerPosition.x / gridSize)} Y: {Math.floor(playerPosition.y / gridSize)}</p>
+          <p>Speed: {movementSpeed}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        backgroundColor: '#222',
+      }}
+    >
+      {renderGrid()}
+      {renderPlayer()}
+      {renderPlayerInfo()}
+      {renderHazardBanner()}
     </div>
   );
 };
