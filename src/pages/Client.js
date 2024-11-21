@@ -68,6 +68,13 @@ useEffect(() => {
     };
   }, []);
 
+const calculateCurrentCell = (x, y) => {
+  const cellX = Math.floor(x / gridSize); // Calculate column
+  const cellY = Math.floor(y / gridSize); // Calculate row
+  return { cellX, cellY };
+};
+
+
   // Render the grid
 const renderGrid = () => {
   const cols = Math.ceil(viewportWidth / gridSize);
@@ -153,24 +160,25 @@ const renderGrid = () => {
           </div>
         </div>
       )}
+{player && (
+  <div
+    style={{
+      position: 'absolute',
+      bottom: '10px',
+      left: '10px',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      color: 'white',
+      padding: '10px',
+    }}
+  >
+    <h4>Player Info:</h4>
+    <p>Player ID: {player.id}</p>
+    <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
+    <p>Current Cell: X: {Math.floor(playerPosition.x / gridSize)} Y: {Math.floor(playerPosition.y / gridSize)}</p>
+    <p>Speed: {movementSpeed}</p>
+  </div>
+)}
 
-      {player && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            left: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '10px',
-          }}
-        >
-          <h4>Player Info:</h4>
-          <p>Player ID: {player.id}</p>
-          <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
-          <p>Speed: {movementSpeed}</p>
-        </div>
-      )}
     </div>
   );
 };
