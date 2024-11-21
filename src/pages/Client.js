@@ -28,15 +28,11 @@ const Client = () => {
       setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
     });
 
-socket.on('playerMoved', (updatedPlayer) => {
-  if (updatedPlayer.id === player?.id) {
-    // Snap player position to gridSize increments
-    setPlayerPosition({
-      x: Math.round(updatedPlayer.x / gridSize) * gridSize,
-      y: Math.round(updatedPlayer.y / gridSize) * gridSize,
+    socket.on('playerMoved', (updatedPlayer) => {
+      if (updatedPlayer.id === player?.id) {
+        setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
+      }
     });
-  }
-});
 
     return () => {
       socket.off('initialize');
