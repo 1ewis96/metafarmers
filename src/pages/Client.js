@@ -81,8 +81,11 @@ const renderGrid = () => {
   const rows = Math.ceil(viewportHeight / gridSize);
 
   const gridLines = [];
-  
-  // Render vertical lines and coordinates
+
+  // Calculate the top-left corner of the grid (anchor point)
+  const startX = Math.floor(playerPosition.x / gridSize) * gridSize - (cols / 2) * gridSize;
+  const startY = Math.floor(playerPosition.y / gridSize) * gridSize - (rows / 2) * gridSize;
+
   for (let col = -1; col < cols + 1; col++) {
     gridLines.push(
       <div
@@ -90,7 +93,7 @@ const renderGrid = () => {
         style={{
           position: 'absolute',
           top: 0,
-          left: `${col * gridSize + gridOffset.x}px`,
+          left: `${startX + col * gridSize - playerPosition.x + viewportWidth / 2}px`,
           height: `${viewportHeight}px`,
           width: '1px',
           backgroundColor: '#555',
@@ -99,14 +102,13 @@ const renderGrid = () => {
     );
   }
 
-  // Render horizontal lines and coordinates
   for (let row = -1; row < rows + 1; row++) {
     gridLines.push(
       <div
         key={`h-${row}`}
         style={{
           position: 'absolute',
-          top: `${row * gridSize + gridOffset.y}px`,
+          top: `${startY + row * gridSize - playerPosition.y + viewportHeight / 2}px`,
           left: 0,
           width: `${viewportWidth}px`,
           height: '1px',
@@ -114,33 +116,6 @@ const renderGrid = () => {
         }}
       />
     );
-  }
-
-  // Add labels for each grid cell
-  for (let col = -1; col < cols + 1; col++) {
-    for (let row = -1; row < rows + 1; row++) {
-      gridLines.push(
-        <div
-          key={`cell-${col}-${row}`}
-          style={{
-            position: 'absolute',
-            top: `${row * gridSize + gridOffset.y}px`,
-            left: `${col * gridSize + gridOffset.x}px`,
-            width: `${gridSize}px`,
-            height: `${gridSize}px`,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#fff',
-            fontSize: '10px',
-            pointerEvents: 'none',  // Disable pointer events so it doesn't interfere with player interactions
-            zIndex: 1,
-          }}
-        >
-          {`(${col}, ${row})`}
-        </div>
-      );
-    }
   }
 
   return gridLines;
