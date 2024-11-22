@@ -20,8 +20,57 @@ const Client = () => {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [cellInfo, setCellInfo] = useState(null);
   const [buildMode, setBuildMode] = useState(false);
-  
+  const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 20; // Default movement speed
+
+// Fetch grid objects from API
+const fetchGridObjects = async (x, y) => {
+  try {
+    const response = await fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y}`);
+    if (response.ok) {
+      const data = await response.json();
+      setObjects(data);
+    } else {
+      console.error('Failed to fetch grid objects', response.status);
+    }
+  } catch (error) {
+    console.error('Error fetching grid objects:', error);
+  }
+};
+
+// Render the objects on the grid with images
+const renderObjects = () => {
+  return objects.map((obj) => {
+    const objectImageSrc = `/assets/${obj.type}.png`; // Construct the image source URL dynamically
+
+    return (
+      <div
+        key={obj.id}
+        style={{
+          position: 'absolute',
+          top: `${obj.grid_y * gridSize + gridOffset.y}px`,
+          left: `${obj.grid_x * gridSize + gridOffset.x}px`,
+          width: `${gridSize}px`,
+          height: `${gridSize}px`,
+        }}
+        title={`Type: ${obj.type}`} // Tooltip with object type
+      >
+        <img
+          src={objectImageSrc}
+          alt={obj.type}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain', // Ensure the image fits well within the grid
+          }}
+          onError={(e) => {
+            e.target.src = '/assets/default.png'; // Fallback to a default image if the specific one isn't found
+          }}
+        />
+      </div>
+    );
+  });
+};
 
   // Handle mouse move to track hovered cell
   const handleMouseMove = (e) => {
@@ -72,12 +121,15 @@ const Client = () => {
     };
   }, [player]);
 
-  // Update grid offset to center the player
+  // Update grid offset and fetch objects when the player position changes
   useEffect(() => {
     if (playerPosition) {
       const offsetX = viewportWidth / 2 - (Math.floor(playerPosition.x / gridSize) * gridSize) - (playerPosition.x % gridSize);
       const offsetY = viewportHeight / 2 - (Math.floor(playerPosition.y / gridSize) * gridSize) - (playerPosition.y % gridSize);
       setGridOffset({ x: offsetX, y: offsetY });
+
+      // Fetch objects for the current grid
+      fetchGridObjects(Math.floor(playerPosition.x / gridSize), Math.floor(playerPosition.y / gridSize));
     }
   }, [playerPosition]);
 
@@ -189,6 +241,7 @@ const Client = () => {
     return gridLines;
   };
 
+
   // Render the player on the screen
   const renderPlayer = () => {
     if (player) {
@@ -248,7 +301,7 @@ const Client = () => {
     return null;
   };
 
-  // Render the cell info panel (new addition)
+  // Render the cell info panel
   const renderCellInfoPanel = () => {
     if (cellInfo) {
       return (
@@ -270,7 +323,7 @@ const Client = () => {
     }
     return null;
   };
-  
+
   return (
     <div
       style={{
@@ -282,10 +335,11 @@ const Client = () => {
       }}
     >
       {renderGrid()}
+      {renderObjects()}
       {renderPlayer()}
       {renderPlayerInfo()}
       {renderHazardBanner()}
-	  {renderCellInfoPanel()}
+      {renderCellInfoPanel()}
     </div>
   );
 };

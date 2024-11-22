@@ -33,7 +33,7 @@ const LoggedInNavigation = () => {
 
         <div className="col-md-3 text-end">
     <Link className="btn btn-primary me-2" to="/logout">Logout</Link>
-          <Link className="btn btn-primary me-5" to="/client">Client></Link>
+          <Link className="btn btn-primary me-5" to="/client" target="_blank" rel="noopener noreferrer">Client></Link>
         </div>
 	
       </header>
