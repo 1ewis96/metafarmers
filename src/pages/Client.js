@@ -288,7 +288,7 @@ const handleCellClick = (e) => {
     for (let col = -1; col < cols + 1; col++) {
       gridLines.push(
         <div
-          key={v-${col}}
+          key={`v-${col}`}
           style={{
             position: 'absolute',
             top: 0,
@@ -304,7 +304,7 @@ const handleCellClick = (e) => {
     for (let row = -1; row < rows + 1; row++) {
       gridLines.push(
         <div
-          key={h-${row}}
+          key={`h-${row}`}
           style={{
             position: 'absolute',
             top: ${row * gridSize + gridOffset.y}px,
