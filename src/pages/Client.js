@@ -93,14 +93,19 @@ const renderObjects = () => {
   };
 
   // Handle click to open the cell info panel
-  const handleCellClick = () => {
-    if (hoveredCell) {
-      setCellInfo({
-        x: hoveredCell.x,
-        y: hoveredCell.y,
-      });
-    }
-  };
+// Handle click to open the cell info panel
+const handleCellClick = (e) => {
+  const mouseX = e.clientX - gridOffset.x;
+  const mouseY = e.clientY - gridOffset.y;
+  const cellX = Math.floor(mouseX / gridSize);
+  const cellY = Math.floor(mouseY / gridSize);
+
+  setCellInfo({
+    x: cellX,
+    y: cellY,
+  });
+};
+
 
   // Socket connection: handle player initialization and movement updates
   useEffect(() => {
