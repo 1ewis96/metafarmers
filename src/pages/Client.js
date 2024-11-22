@@ -41,7 +41,7 @@ const fetchGridObjects = async (x, y) => {
 // Render the objects on the grid with images
 const renderObjects = () => {
   return objects.map((obj) => {
-    const objectImageSrc = `/assets/${obj.type}.png`; // Construct the image source URL dynamically
+    const objectImageSrc = `/assets/objects/${obj.type}.png`; // Construct the image source URL dynamically
 
     return (
       <div
