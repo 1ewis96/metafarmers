@@ -56,6 +56,15 @@ const loadAssets = async () => {
 useEffect(() => {
   loadAssets(); // Load all assets before socket connection
 
+useEffect(() => {
+  if (loading) return; // Don't initialize socket until assets are loaded
+
+  const socket = io('https://13.49.67.160', {
+    query: {
+      sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo',
+    },
+  });
+
   socket.on('initialize', (playerData) => {
     setPlayer(playerData);
     setPlayerPosition({ x: playerData.x, y: playerData.y });
@@ -67,6 +76,12 @@ useEffect(() => {
       setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
     }
   });
+
+  return () => {
+    socket.off('initialize');
+    socket.off('playerMoved');
+  };
+}, [loading, player]); // Only run after assets are loaded
 
   return () => {
     socket.off('initialize');
