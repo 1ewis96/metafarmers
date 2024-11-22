@@ -24,54 +24,54 @@ const Client = () => {
   const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 20; // Default movement speed
 
-// Fetch grid objects from API
-const fetchGridObjects = async (x, y) => {
-  try {
-    const response = await fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y}`);
-    if (response.ok) {
-      const data = await response.json();
-      setObjects(data);
-    } else {
-      console.error('Failed to fetch grid objects', response.status);
+  // Fetch grid objects from API
+  const fetchGridObjects = async (x, y) => {
+    try {
+      const response = await fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all`);
+      if (response.ok) {
+        const data = await response.json();
+        setObjects(data);
+      } else {
+        console.error('Failed to fetch grid objects', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching grid objects:', error);
     }
-  } catch (error) {
-    console.error('Error fetching grid objects:', error);
-  }
-};
+  };
 
-// Render the objects on the grid with images
-const renderObjects = () => {
-  return objects.map((obj) => {
-    const objectImageSrc = `/assets/objects/${obj.type}.png`; // Construct the image source URL dynamically
+  // Render the objects on the grid with images
+  const renderObjects = () => {
+    return objects.map((obj) => {
+      const objectImageSrc = `/assets/objects/${obj.object_name}.png`; // Construct the image source URL dynamically
 
-    return (
-      <div
-        key={obj.id}
-        style={{
-          position: 'absolute',
-          top: `${obj.grid_y * gridSize + gridOffset.y}px`,
-          left: `${obj.grid_x * gridSize + gridOffset.x}px`,
-          width: `${gridSize}px`,
-          height: `${gridSize}px`,
-        }}
-        title={`Type: ${obj.type}`} // Tooltip with object type
-      >
-        <img
-          src={objectImageSrc}
-          alt={obj.type}
+      return (
+        <div
+          key={obj.id}
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain', // Ensure the image fits well within the grid
+            position: 'absolute',
+            top: `${obj.y * gridSize + gridOffset.y}px`,
+            left: `${obj.x * gridSize + gridOffset.x}px`,
+            width: `${gridSize}px`,
+            height: `${gridSize}px`,
           }}
-          onError={(e) => {
-            e.target.src = defaultObject; // Fallback to a default image if the specific one isn't found
-          }}
-        />
-      </div>
-    );
-  });
-};
+          title={`Object: ${obj.object_name}`} // Tooltip with object name
+        >
+          <img
+            src={objectImageSrc}
+            alt={obj.object_name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain', // Ensure the image fits well within the grid
+            }}
+            onError={(e) => {
+              e.target.src = defaultObject; // Fallback to a default image if the specific one isn't found
+            }}
+          />
+        </div>
+      );
+    });
+  };
 
   // Handle mouse move to track hovered cell
   const handleMouseMove = (e) => {
@@ -93,19 +93,17 @@ const renderObjects = () => {
   };
 
   // Handle click to open the cell info panel
-// Handle click to open the cell info panel
-const handleCellClick = (e) => {
-  const mouseX = e.clientX - gridOffset.x;
-  const mouseY = e.clientY - gridOffset.y;
-  const cellX = Math.floor(mouseX / gridSize);
-  const cellY = Math.floor(mouseY / gridSize);
+  const handleCellClick = (e) => {
+    const mouseX = e.clientX - gridOffset.x;
+    const mouseY = e.clientY - gridOffset.y;
+    const cellX = Math.floor(mouseX / gridSize);
+    const cellY = Math.floor(mouseY / gridSize);
 
-  setCellInfo({
-    x: cellX,
-    y: cellY,
-  });
-};
-
+    setCellInfo({
+      x: cellX,
+      y: cellY,
+    });
+  };
 
   // Socket connection: handle player initialization and movement updates
   useEffect(() => {
@@ -247,7 +245,6 @@ const handleCellClick = (e) => {
     return gridLines;
   };
 
-
   // Render the player on the screen
   const renderPlayer = () => {
     if (player) {
@@ -259,19 +256,17 @@ const handleCellClick = (e) => {
             left: `${viewportWidth / 2}px`, // Centered on the screen
             width: '50px',
             height: '50px',
-            backgroundColor: player.color,
+            backgroundColor: 'blue', // Placeholder for player
             borderRadius: '50%',
-            transform: 'translate(-50%, -50%)',
           }}
         >
           <div
             style={{
               position: 'absolute',
-              top: '-20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              bottom: '5px',
+              left: '5px',
+              fontSize: '12px',
               color: 'white',
-              fontWeight: 'bold',
             }}
           >
             {playerKey}
@@ -279,73 +274,30 @@ const handleCellClick = (e) => {
         </div>
       );
     }
-    return null;
-  };
-
-  // Render the player info panel
-  const renderPlayerInfo = () => {
-    if (player) {
-      return (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            left: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '10px',
-          }}
-        >
-          <h4>Player Info:</h4>
-          <p>Player ID: {player.id}</p>
-          <p>Position: X: {playerPosition.x} Y: {playerPosition.y}</p>
-          <p>Current Cell: X: {Math.floor(playerPosition.x / gridSize)} Y: {Math.floor(playerPosition.y / gridSize)}</p>
-          <p>Speed: {movementSpeed}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Render the cell info panel
-  const renderCellInfoPanel = () => {
-    if (cellInfo) {
-      return (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            right: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '10px',
-            zIndex: 10,
-          }}
-        >
-          <h4>Cell Info:</h4>
-          <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        backgroundColor: '#222',
-      }}
-    >
+    <div>
+      {renderHazardBanner()}
       {renderGrid()}
       {renderObjects()}
       {renderPlayer()}
-      {renderPlayerInfo()}
-      {renderHazardBanner()}
-      {renderCellInfoPanel()}
+      {cellInfo && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+          }}
+        >
+          <strong>Cell Info:</strong>
+          <p>Position: ({cellInfo.x}, {cellInfo.y})</p>
+        </div>
+      )}
     </div>
   );
 };
