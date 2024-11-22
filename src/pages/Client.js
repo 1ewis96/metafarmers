@@ -3,106 +3,6 @@ import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
 
 
-const Client = () => {
-  const [player, setPlayer] = useState(null);
-  const [playerKey, setPlayerKey] = useState('');
-  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [cellInfo, setCellInfo] = useState(null);
-  const [buildMode, setBuildMode] = useState(false);
-  const [objects, setObjects] = useState([]); // Store grid objects
-  const movementSpeed = 20; // Default movement speed
-  
-const [loading, setLoading] = useState(true); // Track loading state
-const [loadingProgress, setLoadingProgress] = useState(0); // Track progress
-
-const loadAssets = async () => {
-  try {
-    const response = await fetch('https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all');
-    if (!response.ok) {
-      throw new Error('Failed to fetch asset list');
-    }
-
-    const assetList = await response.json();
-    const totalAssets = assetList.length;
-    let loadedAssets = 0;
-
-    // Create promises to load each image
-    const loadImagePromises = assetList.map((asset) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = `/assets/objects/${asset.location}`;
-        img.onload = () => {
-          loadedAssets++;
-          setLoadingProgress((loadedAssets / totalAssets) * 100);
-          resolve();
-        };
-        img.onerror = reject;
-      });
-    });
-
-    // Wait for all images to load
-    await Promise.all(loadImagePromises);
-
-    // Set the objects once loaded and hide the splash screen
-    setObjects(assetList);
-    setLoading(false); // Stop the loading splash screen
-  } catch (error) {
-    console.error('Error loading assets:', error);
-  }
-};
-
-useEffect(() => {
-  loadAssets(); // Load all assets before socket connection
-
-  socket.on('initialize', (playerData) => {
-    setPlayer(playerData);
-    setPlayerPosition({ x: playerData.x, y: playerData.y });
-    setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
-  });
-
-  socket.on('playerMoved', (updatedPlayer) => {
-    if (updatedPlayer.id === player?.id) {
-      setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
-    }
-  });
-
-  return () => {
-    socket.off('initialize');
-    socket.off('playerMoved');
-  };
-}, [player]); // Only re-run if player changes
-
-const renderLoadingSplash = () => {
-  if (loading) {
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          color: 'white',
-          fontSize: '24px',
-          zIndex: 9999,
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <h1>Loading...</h1>
-          <progress value={loadingProgress} max={100} style={{ width: '300px', marginTop: '20px' }} />
-          <p>{Math.round(loadingProgress)}% loaded</p>
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
 
 // Set up the socket connection with sessionKey
 const socket = io('https://13.49.67.160', {
@@ -115,10 +15,21 @@ const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
+const Client = () => {
+  const [player, setPlayer] = useState(null);
+  const [playerKey, setPlayerKey] = useState('');
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  const [objects, setObjects] = useState([]); // Store grid objects
+  const movementSpeed = 20; // Default movement speed
+
 // Fetch grid objects from API
 const fetchGridObjects = async (x, y) => {
   try {
-    const response = await fetch(https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y});
+    const response = await fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y}`);
     if (response.ok) {
       const data = await response.json();
       setObjects(data);
@@ -133,19 +44,19 @@ const fetchGridObjects = async (x, y) => {
 // Render the objects on the grid with images
 const renderObjects = () => {
   return objects.map((obj) => {
-    const objectImageSrc = /assets/objects/${obj.type}.png; // Construct the image source URL dynamically
+    const objectImageSrc = `/assets/objects/${obj.type}.png`; // Construct the image source URL dynamically
 
     return (
       <div
         key={obj.id}
         style={{
           position: 'absolute',
-          top: ${obj.grid_y * gridSize + gridOffset.y}px,
-          left: ${obj.grid_x * gridSize + gridOffset.x}px,
-          width: ${gridSize}px,
-          height: ${gridSize}px,
+          top: `${obj.grid_y * gridSize + gridOffset.y}px`,
+          left: `${obj.grid_x * gridSize + gridOffset.x}px`,
+          width: `${gridSize}px`,
+          height: `${gridSize}px`,
         }}
-        title={Type: ${obj.type}} // Tooltip with object type
+        title={`Type: ${obj.type}`} // Tooltip with object type
       >
         <img
           src={objectImageSrc}
@@ -292,8 +203,8 @@ const handleCellClick = (e) => {
           style={{
             position: 'absolute',
             top: 0,
-            left: ${col * gridSize + gridOffset.x}px,
-            height: ${viewportHeight}px,
+            left: `${col * gridSize + gridOffset.x}px`,
+            height: `${viewportHeight}px`,
             width: '1px',
             backgroundColor: '#555',
           }}
@@ -307,9 +218,9 @@ const handleCellClick = (e) => {
           key={`h-${row}`}
           style={{
             position: 'absolute',
-            top: ${row * gridSize + gridOffset.y}px,
+            top: `${row * gridSize + gridOffset.y}px`,
             left: 0,
-            width: ${viewportWidth}px,
+            width: `${viewportWidth}px`,
             height: '1px',
             backgroundColor: '#555',
           }}
@@ -321,13 +232,13 @@ const handleCellClick = (e) => {
     if (hoveredCell) {
       gridLines.push(
         <div
-          key={highlight-${hoveredCell.x}-${hoveredCell.y}}
+          key={`highlight-${hoveredCell.x}-${hoveredCell.y}`}
           style={{
             position: 'absolute',
-            top: ${hoveredCell.y * gridSize + gridOffset.y}px,
-            left: ${hoveredCell.x * gridSize + gridOffset.x}px,
-            width: ${gridSize}px,
-            height: ${gridSize}px,
+            top: `${hoveredCell.y * gridSize + gridOffset.y}px`,
+            left: `${hoveredCell.x * gridSize + gridOffset.x}px`,
+            width: `${gridSize}px`,
+            height: `${gridSize}px`,
             border: '2px solid yellow',
             zIndex: 2, // Ensure it's on top of other elements
           }}
@@ -346,8 +257,8 @@ const handleCellClick = (e) => {
         <div
           style={{
             position: 'absolute',
-            top: ${viewportHeight / 2}px, // Centered on the screen
-            left: ${viewportWidth / 2}px, // Centered on the screen
+            top: `${viewportHeight / 2}px`, // Centered on the screen
+            left: `${viewportWidth / 2}px`, // Centered on the screen
             width: '50px',
             height: '50px',
             backgroundColor: player.color,
@@ -431,7 +342,6 @@ const handleCellClick = (e) => {
         backgroundColor: '#222',
       }}
     >
-	  {renderLoadingSplash()} {/* Show splash screen until assets are loaded */}
       {renderGrid()}
       {renderObjects()}
       {renderPlayer()}
