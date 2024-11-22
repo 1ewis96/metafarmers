@@ -32,7 +32,7 @@ const loadAssets = async () => {
     const loadImagePromises = assetList.map((asset) => {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        img.src = /assets/objects/${asset.location};
+        img.src = `/assets/objects/${asset.location}`;
         img.onload = () => {
           loadedAssets++;
           setLoadingProgress((loadedAssets / totalAssets) * 100);
