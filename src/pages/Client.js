@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
+import defaultObject from '../assets/objects/default.png';
 
 // Set up the socket connection with sessionKey
 const socket = io('https://13.49.67.160', {
@@ -64,7 +65,7 @@ const renderObjects = () => {
             objectFit: 'contain', // Ensure the image fits well within the grid
           }}
           onError={(e) => {
-            e.target.src = '/assets/objects/default.png'; // Fallback to a default image if the specific one isn't found
+            e.target.src = ${defaultObject}; // Fallback to a default image if the specific one isn't found
           }}
         />
       </div>
