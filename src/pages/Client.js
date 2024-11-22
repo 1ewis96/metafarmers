@@ -65,7 +65,7 @@ const renderObjects = () => {
             objectFit: 'contain', // Ensure the image fits well within the grid
           }}
           onError={(e) => {
-            e.target.src = ${defaultObject}; // Fallback to a default image if the specific one isn't found
+            e.target.src = defaultObject; // Fallback to a default image if the specific one isn't found
           }}
         />
       </div>
