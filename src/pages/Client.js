@@ -104,13 +104,33 @@ const renderLoadingSplash = () => {
   return null;
 };
 
-
 // Set up the socket connection with sessionKey
-const socket = io('https://13.49.67.160', {
-  query: {
-    sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
-  },
-});
+useEffect(() => {
+  if (loading) return; // Don't initialize socket until assets are loaded
+
+  const socket = io('https://13.49.67.160', {
+    query: {
+      sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo',
+    },
+  });
+
+  socket.on('initialize', (playerData) => {
+    setPlayer(playerData);
+    setPlayerPosition({ x: playerData.x, y: playerData.y });
+    setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
+  });
+
+  socket.on('playerMoved', (updatedPlayer) => {
+    if (updatedPlayer.id === player?.id) {
+      setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
+    }
+  });
+
+  return () => {
+    socket.off('initialize');
+    socket.off('playerMoved');
+  };
+}, [loading, player]); // Socket connection depends on `loading` and `player`
 
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
