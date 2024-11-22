@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
-
+ 
 
 const Client = () => {
   const [player, setPlayer] = useState(null);
