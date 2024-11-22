@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
- 
 
-const Client = () => {
-  const [player, setPlayer] = useState(null);
-  const [playerKey, setPlayerKey] = useState('');
-  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [cellInfo, setCellInfo] = useState(null);
-  const [buildMode, setBuildMode] = useState(false);
-  const [objects, setObjects] = useState([]); // Store grid objects
-  const movementSpeed = 20; // Default movement speed
-  
 const [loading, setLoading] = useState(true); // Track loading state
 const [loadingProgress, setLoadingProgress] = useState(0); // Track progress
 
@@ -56,15 +44,6 @@ const loadAssets = async () => {
 useEffect(() => {
   loadAssets(); // Load all assets before socket connection
 
-useEffect(() => {
-  if (loading) return; // Don't initialize socket until assets are loaded
-
-  const socket = io('https://13.49.67.160', {
-    query: {
-      sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo',
-    },
-  });
-
   socket.on('initialize', (playerData) => {
     setPlayer(playerData);
     setPlayerPosition({ x: playerData.x, y: playerData.y });
@@ -76,12 +55,6 @@ useEffect(() => {
       setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
     }
   });
-
-  return () => {
-    socket.off('initialize');
-    socket.off('playerMoved');
-  };
-}, [loading, player]); // Only run after assets are loaded
 
   return () => {
     socket.off('initialize');
@@ -119,37 +92,28 @@ const renderLoadingSplash = () => {
   return null;
 };
 
+
 // Set up the socket connection with sessionKey
-useEffect(() => {
-  if (loading) return; // Don't initialize socket until assets are loaded
-
-  const socket = io('https://13.49.67.160', {
-    query: {
-      sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo',
-    },
-  });
-
-  socket.on('initialize', (playerData) => {
-    setPlayer(playerData);
-    setPlayerPosition({ x: playerData.x, y: playerData.y });
-    setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
-  });
-
-  socket.on('playerMoved', (updatedPlayer) => {
-    if (updatedPlayer.id === player?.id) {
-      setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
-    }
-  });
-
-  return () => {
-    socket.off('initialize');
-    socket.off('playerMoved');
-  };
-}, [loading, player]); // Socket connection depends on `loading` and `player`
+const socket = io('https://13.49.67.160', {
+  query: {
+    sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
+  },
+});
 
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
+
+const Client = () => {
+  const [player, setPlayer] = useState(null);
+  const [playerKey, setPlayerKey] = useState('');
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  const [objects, setObjects] = useState([]); // Store grid objects
+  const movementSpeed = 20; // Default movement speed
 
 // Fetch grid objects from API
 const fetchGridObjects = async (x, y) => {
