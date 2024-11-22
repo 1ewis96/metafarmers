@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
 
+
+const Client = () => {
+  const [player, setPlayer] = useState(null);
+  const [playerKey, setPlayerKey] = useState('');
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  const [objects, setObjects] = useState([]); // Store grid objects
+  const movementSpeed = 20; // Default movement speed
+  
 const [loading, setLoading] = useState(true); // Track loading state
 const [loadingProgress, setLoadingProgress] = useState(0); // Track progress
 
@@ -103,17 +115,6 @@ const socket = io('https://13.49.67.160', {
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
-
-const Client = () => {
-  const [player, setPlayer] = useState(null);
-  const [playerKey, setPlayerKey] = useState('');
-  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [cellInfo, setCellInfo] = useState(null);
-  const [buildMode, setBuildMode] = useState(false);
-  const [objects, setObjects] = useState([]); // Store grid objects
-  const movementSpeed = 20; // Default movement speed
 
 // Fetch grid objects from API
 const fetchGridObjects = async (x, y) => {
