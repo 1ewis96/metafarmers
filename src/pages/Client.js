@@ -2,6 +2,97 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
 
+const [loading, setLoading] = useState(true); // Track loading state
+const [loadingProgress, setLoadingProgress] = useState(0); // Track progress
+
+const loadAssets = async () => {
+  try {
+    const response = await fetch('https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all');
+    if (!response.ok) {
+      throw new Error('Failed to fetch asset list');
+    }
+
+    const assetList = await response.json();
+    const totalAssets = assetList.length;
+    let loadedAssets = 0;
+
+    // Create promises to load each image
+    const loadImagePromises = assetList.map((asset) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = `/assets/objects/${asset.location}`;
+        img.onload = () => {
+          loadedAssets++;
+          setLoadingProgress((loadedAssets / totalAssets) * 100);
+          resolve();
+        };
+        img.onerror = reject;
+      });
+    });
+
+    // Wait for all images to load
+    await Promise.all(loadImagePromises);
+
+    // Set the objects once loaded and hide the splash screen
+    setObjects(assetList);
+    setLoading(false); // Stop the loading splash screen
+  } catch (error) {
+    console.error('Error loading assets:', error);
+  }
+};
+
+useEffect(() => {
+  loadAssets(); // Load all assets before socket connection
+
+  socket.on('initialize', (playerData) => {
+    setPlayer(playerData);
+    setPlayerPosition({ x: playerData.x, y: playerData.y });
+    setPlayerKey(playerData.id.slice(0, 5)); // Get the first 5 characters of player ID for display
+  });
+
+  socket.on('playerMoved', (updatedPlayer) => {
+    if (updatedPlayer.id === player?.id) {
+      setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
+    }
+  });
+
+  return () => {
+    socket.off('initialize');
+    socket.off('playerMoved');
+  };
+}, [player]); // Only re-run if `player` changes
+
+const renderLoadingSplash = () => {
+  if (loading) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          color: 'white',
+          fontSize: '24px',
+          zIndex: 9999,
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <h1>Loading...</h1>
+          <progress value={loadingProgress} max={100} style={{ width: '300px', marginTop: '20px' }} />
+          <p>{Math.round(loadingProgress)}% loaded</p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+
 // Set up the socket connection with sessionKey
 const socket = io('https://13.49.67.160', {
   query: {
@@ -340,6 +431,7 @@ const handleCellClick = (e) => {
         backgroundColor: '#222',
       }}
     >
+	  {renderLoadingSplash()} {/* Show splash screen until assets are loaded */}
       {renderGrid()}
       {renderObjects()}
       {renderPlayer()}
