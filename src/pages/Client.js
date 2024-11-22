@@ -74,18 +74,13 @@ const renderObjects = () => {
 };
 
   // Handle mouse move to track hovered cell
-// Handle mouse move to track hovered cell
-const handleMouseMove = (e) => {
-  const gridRect = e.target.getBoundingClientRect(); // Get grid boundaries
-  const mouseX = e.clientX - gridRect.left; // Adjust for grid position on the screen
-  const mouseY = e.clientY - gridRect.top;
-
-  const cellX = Math.floor((mouseX - gridOffset.x) / gridSize);
-  const cellY = Math.floor((mouseY - gridOffset.y) / gridSize);
-
-  setHoveredCell({ x: cellX, y: cellY });
-};
-
+  const handleMouseMove = (e) => {
+    const mouseX = e.clientX - gridOffset.x;
+    const mouseY = e.clientY - gridOffset.y;
+    const cellX = Math.floor(mouseX / gridSize);
+    const cellY = Math.floor(mouseY / gridSize);
+    setHoveredCell({ x: cellX, y: cellY });
+  };
 
   // Handle key press for movement (W, A, S, D) and build mode (B)
   const handleKeyDown = (e) => {
@@ -100,14 +95,15 @@ const handleMouseMove = (e) => {
   // Handle click to open the cell info panel
 // Handle click to open the cell info panel
 const handleCellClick = (e) => {
-  const gridRect = e.target.getBoundingClientRect(); // Get grid boundaries
-  const mouseX = e.clientX - gridRect.left;
-  const mouseY = e.clientY - gridRect.top;
+  const mouseX = e.clientX - gridOffset.x;
+  const mouseY = e.clientY - gridOffset.y;
+  const cellX = Math.floor(mouseX / gridSize);
+  const cellY = Math.floor(mouseY / gridSize);
 
-  const cellX = Math.floor((mouseX - gridOffset.x) / gridSize);
-  const cellY = Math.floor((mouseY - gridOffset.y) / gridSize);
-
-  setCellInfo({ x: cellX, y: cellY });
+  setCellInfo({
+    x: cellX,
+    y: cellY,
+  });
 };
 
 
