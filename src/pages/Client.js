@@ -27,25 +27,28 @@ const Client = () => {
   const movementSpeed = 20; // Default movement speed
 
 // Fetch grid objects from API
-const fetchGridObjects = async (x, y) => {
-  try {
-    const response = await fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y}`);
-    if (response.ok) {
-      const data = await response.json();
-      setObjects(data);
-    } else {
-      console.error('Failed to fetch grid objects', response.status);
+const fetchGridObjects = async (centerX, centerY) => {
+  const range = 1; // Load surrounding cells within this range
+  const requests = [];
+
+  for (let x = centerX - range; x <= centerX + range; x++) {
+    for (let y = centerY - range; y <= centerY + range; y++) {
+      requests.push(
+        fetch(`https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/object/grid?x=${x}&y=${y}`)
+          .then((response) => (response.ok ? response.json() : null))
+          .catch((err) => console.error('Error fetching grid objects:', err))
+      );
     }
-  } catch (error) {
-    console.error('Error fetching grid objects:', error);
   }
+
+  const results = await Promise.all(requests);
+  const allObjects = results.flat().filter(Boolean); // Combine and filter out null results
+  setObjects((prev) => [...prev, ...allObjects]); // Merge with existing objects
 };
 
 // Render the objects on the grid with images
 const renderObjects = () => {
   return objects.map((obj) => {
-    const objectImageSrc = `/assets/objects/${obj.type}.png`; // Construct the image source URL dynamically
-
     return (
       <div
         key={obj.id}
@@ -56,24 +59,25 @@ const renderObjects = () => {
           width: `${gridSize}px`,
           height: `${gridSize}px`,
         }}
-        title={`Type: ${obj.type}`} // Tooltip with object type
+        title={`Type: ${obj.type}`}
       >
         <img
-          src={objectImageSrc}
+          src={`/assets/objects/${obj.type}.png`}
           alt={obj.type}
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain', // Ensure the image fits well within the grid
+            objectFit: 'contain',
           }}
           onError={(e) => {
-            e.target.src = defaultObject; // Fallback to a default image if the specific one isn't found
+            e.target.src = defaultObject;
           }}
         />
       </div>
     );
   });
 };
+
 
   // Handle mouse move to track hovered cell
   const handleMouseMove = (e) => {
@@ -130,16 +134,23 @@ const handleCellClick = (e) => {
   }, [player]);
 
   // Update grid offset and fetch objects when the player position changes
-  useEffect(() => {
-    if (playerPosition) {
-      const offsetX = viewportWidth / 2 - (Math.floor(playerPosition.x / gridSize) * gridSize) - (playerPosition.x % gridSize);
-      const offsetY = viewportHeight / 2 - (Math.floor(playerPosition.y / gridSize) * gridSize) - (playerPosition.y % gridSize);
-      setGridOffset({ x: offsetX, y: offsetY });
+useEffect(() => {
+  if (playerPosition) {
+    const currentCellX = Math.floor(playerPosition.x / gridSize);
+    const currentCellY = Math.floor(playerPosition.y / gridSize);
 
-      // Fetch objects for the current grid
-      fetchGridObjects(Math.floor(playerPosition.x / gridSize), Math.floor(playerPosition.y / gridSize));
-    }
-  }, [playerPosition]);
+    // Adjust grid offset for smooth player centering
+    const offsetX =
+      viewportWidth / 2 - Math.floor(playerPosition.x / gridSize) * gridSize - (playerPosition.x % gridSize);
+    const offsetY =
+      viewportHeight / 2 - Math.floor(playerPosition.y / gridSize) * gridSize - (playerPosition.y % gridSize);
+    setGridOffset({ x: offsetX, y: offsetY });
+
+    // Fetch objects for the current and surrounding grids
+    fetchGridObjects(currentCellX, currentCellY);
+  }
+}, [playerPosition]);
+
 
   // Add event listeners for mouse and keydown events
   useEffect(() => {
@@ -189,65 +200,50 @@ const handleCellClick = (e) => {
   };
 
   // Render the grid with lines and highlighted cell
-  const renderGrid = () => {
-    const cols = Math.ceil(viewportWidth / gridSize);
-    const rows = Math.ceil(viewportHeight / gridSize);
+const renderGrid = () => {
+  const cols = Math.ceil(viewportWidth / gridSize) + 2; // Add extra lines for smooth scrolling
+  const rows = Math.ceil(viewportHeight / gridSize) + 2;
 
-    const gridLines = [];
+  const startCol = Math.floor(playerPosition.x / gridSize) - Math.floor(cols / 2);
+  const startRow = Math.floor(playerPosition.y / gridSize) - Math.floor(rows / 2);
 
-    // Render vertical and horizontal lines
-    for (let col = -1; col < cols + 1; col++) {
-      gridLines.push(
-        <div
-          key={`v-${col}`}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: `${col * gridSize + gridOffset.x}px`,
-            height: `${viewportHeight}px`,
-            width: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
-    }
+  const gridLines = [];
 
-    for (let row = -1; row < rows + 1; row++) {
-      gridLines.push(
-        <div
-          key={`h-${row}`}
-          style={{
-            position: 'absolute',
-            top: `${row * gridSize + gridOffset.y}px`,
-            left: 0,
-            width: `${viewportWidth}px`,
-            height: '1px',
-            backgroundColor: '#555',
-          }}
-        />
-      );
-    }
+  for (let col = startCol; col < startCol + cols; col++) {
+    gridLines.push(
+      <div
+        key={`v-${col}`}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: `${col * gridSize + gridOffset.x}px`,
+          height: `${viewportHeight}px`,
+          width: '1px',
+          backgroundColor: '#555',
+        }}
+      />
+    );
+  }
 
-    // Highlight the hovered cell
-    if (hoveredCell) {
-      gridLines.push(
-        <div
-          key={`highlight-${hoveredCell.x}-${hoveredCell.y}`}
-          style={{
-            position: 'absolute',
-            top: `${hoveredCell.y * gridSize + gridOffset.y}px`,
-            left: `${hoveredCell.x * gridSize + gridOffset.x}px`,
-            width: `${gridSize}px`,
-            height: `${gridSize}px`,
-            border: '2px solid yellow',
-            zIndex: 2, // Ensure it's on top of other elements
-          }}
-        />
-      );
-    }
+  for (let row = startRow; row < startRow + rows; row++) {
+    gridLines.push(
+      <div
+        key={`h-${row}`}
+        style={{
+          position: 'absolute',
+          top: `${row * gridSize + gridOffset.y}px`,
+          left: 0,
+          width: `${viewportWidth}px`,
+          height: '1px',
+          backgroundColor: '#555',
+        }}
+      />
+    );
+  }
 
-    return gridLines;
-  };
+  return gridLines;
+};
+
 
   // Render the player on the screen
   const renderPlayer = () => {
