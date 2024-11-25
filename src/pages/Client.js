@@ -249,7 +249,6 @@ const handleCellClick = (e) => {
     return gridLines;
   };
 
-
   // Render the player on the screen
   const renderPlayer = () => {
     if (player) {
@@ -309,6 +308,38 @@ const handleCellClick = (e) => {
     return null;
   };
 
+const pullObjectInfo = () => {
+	
+	
+	
+	
+	
+}
+
+const renderWorldInfo = () => {
+	
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+            zIndex: 10,
+          }}
+        >
+          <h4>World Info:</h4>
+          <p>JSON</p>
+        </div>
+      );	
+	
+	
+	
+}
+
+
   // Render the cell info panel
   const renderCellInfoPanel = () => {
     if (cellInfo) {
@@ -326,11 +357,14 @@ const handleCellClick = (e) => {
         >
           <h4>Cell Info:</h4>
           <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
+		  <h4>Obj Info:</h4>
+          <p>JSON</p>
         </div>
       );
     }
     return null;
   };
+  
 
   return (
     <div
@@ -348,6 +382,7 @@ const handleCellClick = (e) => {
       {renderPlayerInfo()}
       {renderHazardBanner()}
       {renderCellInfoPanel()}
+	  {renderWorldInfo()}
     </div>
   );
 };
