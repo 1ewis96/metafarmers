@@ -11,7 +11,7 @@ const socket = io('https://13.49.67.160', {
   },
 });
 
-const gridSize = 500; // Size of each grid square in pixels
+const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
