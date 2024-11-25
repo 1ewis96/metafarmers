@@ -24,7 +24,7 @@ const Client = () => {
   const [cellInfo, setCellInfo] = useState(null);
   const [buildMode, setBuildMode] = useState(false);
   const [objects, setObjects] = useState([]); // Store grid objects
-  const movementSpeed = 20; // Default movement speed
+  const movementSpeed = 40; // Default movement speed
 
 // Fetch grid objects from API
 const fetchGridObjects = async (centerX, centerY) => {
