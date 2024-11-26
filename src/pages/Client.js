@@ -335,6 +335,28 @@ const renderWorldInfo = () => {
 	
 }
 
+const renderHandInfo = () => {
+	
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '100px',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+            zIndex: 10,
+          }}
+        >
+          <h4>Hand Info:</h4>
+          <p>JSON</p>
+        </div>
+      );	
+	
+	
+	
+}
 
   // Render the cell info panel
   const renderCellInfoPanel = () => {
@@ -379,6 +401,7 @@ const renderWorldInfo = () => {
       {renderHazardBanner()}
       {renderCellInfoPanel()}
 	  {renderWorldInfo()}
+	  {renderHandInfo()}
     </div>
   );
 };
