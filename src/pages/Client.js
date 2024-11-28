@@ -220,8 +220,9 @@ const renderRightClickMenu = () => {
   // Handle click to open the cell info panel
 // Handle click to open the cell info panel
 const handleCellClick = (e) => {
-  const mouseX = e.clientX - gridOffset.x;
-  const mouseY = e.clientY - gridOffset.y;
+  const mouseX = e.clientX - viewportWidth / 2 + playerPosition.x;
+  const mouseY = e.clientY - viewportHeight / 2 + playerPosition.y;
+
   const cellX = Math.floor(mouseX / gridSize);
   const cellY = Math.floor(mouseY / gridSize);
 
@@ -230,6 +231,7 @@ const handleCellClick = (e) => {
     y: cellY,
   });
 };
+
 
 
   // Socket connection: handle player initialization and movement updates
@@ -488,29 +490,30 @@ const renderHandInfo = () => {
 }
 
   // Render the cell info panel
-  const renderCellInfoPanel = () => {
-    if (cellInfo) {
-      return (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
-            right: '10px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '10px',
-            zIndex: 10,
-          }}
-        >
-          <h4>Cell Info:</h4>
-          <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
-		  <h4>Obj Info:</h4>
-          <p>JSON</p>
-        </div>
-      );
-    }
-    return null;
-  };
+const renderCellInfoPanel = () => {
+  if (cellInfo) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '10px',
+          right: '10px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
+          padding: '10px',
+          zIndex: 10,
+        }}
+      >
+        <h4>Cell Info:</h4>
+        <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
+        <h4>Obj Info:</h4>
+        <p>JSON</p>
+      </div>
+    );
+  }
+  return null;
+};
+
   
 
   return (
