@@ -25,6 +25,7 @@ const Client = () => {
   const [buildMode, setBuildMode] = useState(false);
   const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 40; // Default movement speed
+  const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
 
 // Fetch grid objects from API
 const fetchGridObjects = async (centerX, centerY) => {
@@ -60,6 +61,15 @@ const renderObjects = () => {
           height: `${gridSize}px`,
         }}
         title={`Type: ${obj.type}`}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setRightClickMenu({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            object: obj,
+          });
+        }}
       >
         <img
           src={`/assets/objects/${obj.type}.png`}
@@ -77,7 +87,6 @@ const renderObjects = () => {
     );
   });
 };
-
 
   // Handle mouse move to track hovered cell
   const handleMouseMove = (e) => {
@@ -97,6 +106,31 @@ const renderObjects = () => {
       socket.emit('move', { directions: [e.key.toUpperCase()], speed: movementSpeed });
     }
   };
+
+
+const renderRightClickMenu = () => {
+  if (!rightClickMenu.visible) return null;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: `${rightClickMenu.y}px`,
+        left: `${rightClickMenu.x}px`,
+        backgroundColor: 'white',
+        border: '1px solid black',
+        zIndex: 100,
+        padding: '10px',
+      }}
+      onClick={() => setRightClickMenu({ visible: false, x: 0, y: 0, object: null })} // Close menu on click
+    >
+      <p>Placeholder Action 1</p>
+      <p>Placeholder Action 2</p>
+      <p>Object: {rightClickMenu.object?.type}</p>
+    </div>
+  );
+};
+
 
   // Handle click to open the cell info panel
 // Handle click to open the cell info panel
@@ -164,6 +198,16 @@ useEffect(() => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+useEffect(() => {
+  const handleClickOutside = () => setRightClickMenu({ visible: false, x: 0, y: 0, object: null });
+  window.addEventListener('click', handleClickOutside);
+
+  return () => {
+    window.removeEventListener('click', handleClickOutside);
+  };
+}, []);
+
 
   // Render hazard banner when build mode is active
   const renderHazardBanner = () => {
@@ -402,6 +446,7 @@ const renderHandInfo = () => {
       {renderCellInfoPanel()}
 	  {renderWorldInfo()}
 	  {renderHandInfo()}
+	  {renderRightClickMenu()}
     </div>
   );
 };
