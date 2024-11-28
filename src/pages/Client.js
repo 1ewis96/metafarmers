@@ -40,6 +40,7 @@ const handleKeyDown = (e) => {
   if (e.key === 'b' || e.key === 'B') {
     setBuildMode((prev) => !prev);
   }
+  
 };
 
 const renderHotbar = () => {
@@ -157,15 +158,7 @@ const renderObjects = () => {
     setHoveredCell({ x: cellX, y: cellY });
   };
 
-  // Handle key press for movement (W, A, S, D) and build mode (B)
-  const handleKeyDown = (e) => {
-    if (e.key === 'b' || e.key === 'B') {
-      setBuildMode((prev) => !prev);
-    }
-    if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
-      socket.emit('move', { directions: [e.key.toUpperCase()], speed: movementSpeed });
-    }
-  };
+
 
 
 const renderRightClickMenu = () => {
@@ -514,3 +507,4 @@ const renderHandInfo = () => {
 };
 
 export default Client;
+
