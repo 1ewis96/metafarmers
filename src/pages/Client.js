@@ -120,7 +120,7 @@ const renderRightClickMenu = () => {
         backgroundColor: 'black',
         border: '1px solid black',
         zIndex: 100,
-		font-color:white;
+		font-color:white,
         padding: '10px',
       }}
       onClick={() => setRightClickMenu({ visible: false, x: 0, y: 0, object: null })} // Close menu on click
