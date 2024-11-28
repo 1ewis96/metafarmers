@@ -27,6 +27,46 @@ const Client = () => {
   const movementSpeed = 40; // Default movement speed
   const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
   const [selectedSlot, setSelectedSlot] = useState(1);
+const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+const handleMouseMove = (e) => {
+  setMousePosition({ x: e.clientX, y: e.clientY });
+  const mouseX = e.clientX - gridOffset.x;
+  const mouseY = e.clientY - gridOffset.y;
+  const cellX = Math.floor(mouseX / gridSize);
+  const cellY = Math.floor(mouseY / gridSize);
+  setHoveredCell({ x: cellX, y: cellY });
+};
+
+const calculateAngle = () => {
+  if (!playerPosition) return 0;
+  const dx = mousePosition.x - viewportWidth / 2; // Player is at screen center
+  const dy = mousePosition.y - viewportHeight / 2;
+  return Math.atan2(dy, dx); // Angle in radians
+};
+
+const renderTriangle = () => {
+  const angle = calculateAngle();
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: `${viewportHeight / 2}px`, // Attach to player (centered)
+        left: `${viewportWidth / 2}px`,
+        width: '0',
+        height: '0',
+        borderLeft: '10px solid transparent',
+        borderRight: '10px solid transparent',
+        borderBottom: '20px solid yellow', // Triangle color
+        transform: `translate(-50%, -100%) rotate(${(angle * 180) / Math.PI}deg)`, // Rotate triangle
+        transformOrigin: '50% 100%', // Rotate around the base
+        zIndex: 6,
+      }}
+    />
+  );
+};
+
 
 const handleKeyDown = (e) => {
   if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
@@ -495,7 +535,9 @@ const renderHandInfo = () => {
 
       {renderGrid()}
       {renderObjects()}
-      {renderPlayer()}
+{renderPlayer()}
+{renderTriangle()}
+
       {renderPlayerInfo()}
       {renderHazardBanner()}
       {renderCellInfoPanel()}
