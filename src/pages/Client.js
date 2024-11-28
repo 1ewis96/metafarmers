@@ -26,6 +26,66 @@ const Client = () => {
   const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 40; // Default movement speed
   const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
+  const [selectedSlot, setSelectedSlot] = useState(1);
+
+const handleKeyDown = (e) => {
+  if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+    socket.emit('move', { directions: [e.key.toUpperCase()], speed: movementSpeed });
+  }
+
+  if (e.key >= '1' && e.key <= '5') {
+    setSelectedSlot(parseInt(e.key, 10));
+  }
+
+  if (e.key === 'b' || e.key === 'B') {
+    setBuildMode((prev) => !prev);
+  }
+};
+
+const renderHotbar = () => {
+  const slots = [1, 2, 3, 4, 5]; // Representing the 5 hotbar slots
+  const hotbarWidth = 300; // Total width of the hotbar
+  const slotSize = hotbarWidth / slots.length;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '10%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: `${hotbarWidth}px`,
+        height: '60px',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        border: '2px solid #888',
+        borderRadius: '10px',
+      }}
+    >
+      {slots.map((slot) => (
+        <div
+          key={slot}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: `${slotSize}px`,
+            height: '100%',
+            border: slot === selectedSlot ? '3px solid yellow' : '1px solid gray', // Yellow pixelated border for the selected slot
+            backgroundColor: '#333',
+            margin: '2px',
+            boxShadow: slot === selectedSlot ? '0 0 5px yellow' : 'none',
+          }}
+        >
+          <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>{slot}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 
 // Fetch grid objects from API
 const fetchGridObjects = async (centerX, centerY) => {
@@ -117,14 +177,15 @@ const renderRightClickMenu = () => {
         position: 'absolute',
         top: `${rightClickMenu.y}px`,
         left: `${rightClickMenu.x}px`,
-        backgroundColor: 'black',
+        backgroundColor: 'white',
         border: '1px solid black',
         zIndex: 100,
-		fontcolor:white,
         padding: '10px',
       }}
       onClick={() => setRightClickMenu({ visible: false, x: 0, y: 0, object: null })} // Close menu on click
     >
+      <p>Placeholder Action 1</p>
+      <p>Placeholder Action 2</p>
       <p>Object: {rightClickMenu.object?.type}</p>
     </div>
   );
@@ -437,6 +498,8 @@ const renderHandInfo = () => {
         backgroundColor: '#222',
       }}
     >
+	{renderHotbar()}
+
       {renderGrid()}
       {renderObjects()}
       {renderPlayer()}
