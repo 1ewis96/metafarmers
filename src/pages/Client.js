@@ -117,15 +117,14 @@ const renderRightClickMenu = () => {
         position: 'absolute',
         top: `${rightClickMenu.y}px`,
         left: `${rightClickMenu.x}px`,
-        backgroundColor: 'white',
+        backgroundColor: 'black',
         border: '1px solid black',
         zIndex: 100,
+		font-color:white;
         padding: '10px',
       }}
       onClick={() => setRightClickMenu({ visible: false, x: 0, y: 0, object: null })} // Close menu on click
     >
-      <p>Placeholder Action 1</p>
-      <p>Placeholder Action 2</p>
       <p>Object: {rightClickMenu.object?.type}</p>
     </div>
   );
