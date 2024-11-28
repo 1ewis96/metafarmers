@@ -189,14 +189,6 @@ const renderObjects = () => {
   });
 };
 
-  // Handle mouse move to track hovered cell
-  const handleMouseMove = (e) => {
-    const mouseX = e.clientX - gridOffset.x;
-    const mouseY = e.clientY - gridOffset.y;
-    const cellX = Math.floor(mouseX / gridSize);
-    const cellY = Math.floor(mouseY / gridSize);
-    setHoveredCell({ x: cellX, y: cellY });
-  };
 
 
 
