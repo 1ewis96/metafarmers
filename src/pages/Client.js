@@ -5,18 +5,19 @@ import Draggable from 'react-draggable'; // For dragging
 import { ResizableBox } from 'react-resizable'; // For resizing
 import 'react-resizable/css/styles.css'; // Import styles
 
+
 // Set up the socket connection with sessionKey
+const socket = io('https://13.49.67.160', {
+  query: {
+    sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
+  },
+});
 
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
-
 const Client = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [objects, setObjects] = useState([]);
-  const [socket, setSocket] = useState(null);
   const [player, setPlayer] = useState(null);
   const [playerKey, setPlayerKey] = useState('');
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
@@ -24,136 +25,12 @@ const Client = () => {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [cellInfo, setCellInfo] = useState(null);
   const [buildMode, setBuildMode] = useState(false);
+  const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 40; // Default movement speed
   const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
   const [selectedSlot, setSelectedSlot] = useState(1);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-const splashScreenStyle = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  backgroundColor: '#222',
-  color: 'white',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  flexDirection: 'column',
-  zIndex: 1000,
-  fontFamily: 'Arial, sans-serif',
-};
-
-// Helper function to preload an image
-const preloadImage = (src) => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = resolve;
-    img.onerror = reject;
-    img.src = src;
-  });
-};
-
-
-
-useEffect(() => {
-  const loadAssetsAndInitSocket = async () => {
-    try {
-      // Step 1: Fetch objects from the API
-      const response = await fetch(
-        'https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all'
-      );
-      const data = await response.json();
-      setObjects(data);
-
-      // Step 2: Preload object images
-      const totalObjects = data.length;
-      let loadedCount = 0;
-
-      // Preload images for each object and track progress
-      await Promise.all(
-        data.map((obj) =>
-          preloadImage(`https://meta-farmers.s3.eu-north-1.amazonaws.com/assets/objects/${obj.location}`).then(() => {
-            loadedCount++;
-            setLoadingProgress(Math.round((loadedCount / totalObjects) * 100));
-          })
-        )
-      );
-
-      // Step 3: Mark loading as complete
-      setIsLoading(false);
-
-      // Step 4: Initialize socket connection after assets are loaded
-      const newSocket = io('https://13.49.67.160', {
-        query: {
-          sessionKey: localStorage.getItem('sessionKey') || 'defaultSessionKey',
-        },
-      });
-
-      setSocket(newSocket);  // Set socket state
-      newSocket.on('connect', () => {
-        console.log('Socket connected:', newSocket.id); // Log when socket is connected
-      });
-
-      // Step 5: Handle player initialization and movement events
-      newSocket.on('initialize', (playerData) => {
-        console.log('Player initialized:', playerData); // Log player data
-        setPlayer(playerData);
-        setPlayerPosition({ x: playerData.x, y: playerData.y });
-        setPlayerKey(playerData.id.slice(0, 5));  // Shorten player ID for display
-      });
-
-      newSocket.on('playerMoved', (updatedPlayer) => {
-        console.log('Player moved:', updatedPlayer); // Log player movement
-        if (updatedPlayer.id === player?.id) {
-          setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
-        }
-      });
-
-      // Cleanup socket on unmount
-      return () => {
-        newSocket.off('initialize');
-        newSocket.off('playerMoved');
-        newSocket.close();
-        console.log('Socket disconnected');
-      };
-    } catch (error) {
-      console.error('Error during asset loading:', error);
-    }
-  };
-
-  loadAssetsAndInitSocket();
-}, []);  // Empty dependency array to ensure this runs only once
-
-  if (isLoading) {
-    return (
-      <div style={splashScreenStyle}>
-        <h1>Loading Game Assets...</h1>
-        <div
-          style={{
-            width: '80%',
-            height: '10px',
-            backgroundColor: '#444',
-            borderRadius: '5px',
-            overflow: 'hidden',
-            marginTop: '20px',
-          }}
-        >
-          <div
-            style={{
-              width: `${loadingProgress}%`,
-              height: '100%',
-              backgroundColor: '#4CAF50',
-              transition: 'width 0.3s ease',
-            }}
-          ></div>
-        </div>
-        <p style={{ marginTop: '10px' }}>{loadingProgress}%</p>
-      </div>
-    );
-  }
-    
 const handleMouseMove = (e) => {
   setMousePosition({ x: e.clientX, y: e.clientY });
   const mouseX = e.clientX - gridOffset.x;
@@ -402,6 +279,10 @@ const renderObjects = () => {
   });
 };
 
+
+
+
+
 const renderRightClickMenu = () => {
   if (!rightClickMenu.visible) return null;
 
@@ -425,7 +306,8 @@ const renderRightClickMenu = () => {
   );
 };
 
-// Handle click to open the cell info panel
+
+  // Handle click to open the cell info panel
 // Handle click to open the cell info panel
 const handleCellClick = (e) => {
   const mouseX = e.clientX - viewportWidth / 2 + playerPosition.x;
@@ -722,6 +604,7 @@ const renderCellInfoPanel = () => {
   return null;
 };
 
+  
 
   return (
     <div
