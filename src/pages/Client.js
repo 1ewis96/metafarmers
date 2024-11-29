@@ -7,17 +7,116 @@ import 'react-resizable/css/styles.css'; // Import styles
 
 
 // Set up the socket connection with sessionKey
-const socket = io('https://13.49.67.160', {
-  query: {
-    sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
-  },
-});
 
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
+const splashScreenStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: '#222',
+  color: 'white',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexDirection: 'column',
+  zIndex: 1000,
+  fontFamily: 'Arial, sans-serif',
+};
+
+// Helper function to preload an image
+const preloadImage = (src) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
 const Client = () => {
+	  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [objects, setObjects] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        // Step 1: Fetch objects from the API
+        const response = await fetch(
+          'https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all'
+        );
+        const data = await response.json();
+        setObjects(data);
+
+        // Step 2: Preload object images
+        const totalObjects = data.length;
+        let loadedCount = 0;
+
+        await Promise.all(
+          data.map((obj) =>
+            preloadImage(`/assets/objects/${obj.location}`).then(() => {
+              loadedCount++;
+              setLoadingProgress(Math.round((loadedCount / totalObjects) * 100));
+            })
+          )
+        );
+
+        // Step 3: Mark loading as complete
+        setIsLoading(false);
+
+        // Step 4: Initialize the socket connection
+        const newSocket = io('https://13.49.67.160', {
+          query: {
+            sessionKey: localStorage.getItem('sessionKey') || 'defaultSessionKey',
+          },
+        });
+        setSocket(newSocket);
+
+        // Cleanup socket on unmount
+        return () => newSocket.close();
+      } catch (error) {
+        console.error('Error during asset loading:', error);
+      }
+    };
+
+    loadAssets();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div style={splashScreenStyle}>
+        <h1>Loading Game Assets...</h1>
+        <div
+          style={{
+            width: '80%',
+            height: '10px',
+            backgroundColor: '#444',
+            borderRadius: '5px',
+            overflow: 'hidden',
+            marginTop: '20px',
+          }}
+        >
+          <div
+            style={{
+              width: `${loadingProgress}%`,
+              height: '100%',
+              backgroundColor: '#4CAF50',
+              transition: 'width 0.3s ease',
+            }}
+          ></div>
+        </div>
+        <p style={{ marginTop: '10px' }}>{loadingProgress}%</p>
+      </div>
+    );
+  }
+  
+  
   const [player, setPlayer] = useState(null);
   const [playerKey, setPlayerKey] = useState('');
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
