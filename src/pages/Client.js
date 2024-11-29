@@ -124,7 +124,6 @@ const Client = () => {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [cellInfo, setCellInfo] = useState(null);
   const [buildMode, setBuildMode] = useState(false);
-  const [objects, setObjects] = useState([]); // Store grid objects
   const movementSpeed = 40; // Default movement speed
   const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
   const [selectedSlot, setSelectedSlot] = useState(1);
