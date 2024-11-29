@@ -39,54 +39,81 @@ const preloadImage = (src) => {
 };
 
 const Client = () => {
-	  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [objects, setObjects] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  useEffect(() => {
-    const loadAssets = async () => {
-      try {
-        // Step 1: Fetch objects from the API
-        const response = await fetch(
-          'https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all'
-        );
-        const data = await response.json();
-        setObjects(data);
+useEffect(() => {
+  const loadAssetsAndInitSocket = async () => {
+    try {
+      // Step 1: Fetch objects from the API
+      const response = await fetch(
+        'https://f1bin6vjd7.execute-api.eu-north-1.amazonaws.com/objects/all'
+      );
+      const data = await response.json();
+      setObjects(data);
 
-        // Step 2: Preload object images
-        const totalObjects = data.length;
-        let loadedCount = 0;
+      // Step 2: Preload object images
+      const totalObjects = data.length;
+      let loadedCount = 0;
 
-        await Promise.all(
-          data.map((obj) =>
-            preloadImage(`https://meta-farmers.s3.eu-north-1.amazonaws.com/assets/objects/${obj.location}`).then(() => {
-              loadedCount++;
-              setLoadingProgress(Math.round((loadedCount / totalObjects) * 100));
-            })
-          )
-        );
+      // Preload images for each object and track progress
+      await Promise.all(
+        data.map((obj) =>
+          preloadImage(`https://meta-farmers.s3.eu-north-1.amazonaws.com/assets/objects/${obj.location}`).then(() => {
+            loadedCount++;
+            setLoadingProgress(Math.round((loadedCount / totalObjects) * 100));
+          })
+        )
+      );
 
-        // Step 3: Mark loading as complete
-        setIsLoading(false);
+      // Step 3: Mark loading as complete
+      setIsLoading(false);
 
-        // Step 4: Initialize the socket connection
-        const newSocket = io('https://13.49.67.160', {
-          query: {
-            sessionKey: localStorage.getItem('sessionKey') || 'defaultSessionKey',
-          },
-        });
-        setSocket(newSocket);
+      // Step 4: Initialize socket connection after assets are loaded
+      const newSocket = io('https://13.49.67.160', {
+        query: {
+          sessionKey: localStorage.getItem('sessionKey') || 'defaultSessionKey',
+        },
+      });
 
-        // Cleanup socket on unmount
-        return () => newSocket.close();
-      } catch (error) {
-        console.error('Error during asset loading:', error);
-      }
-    };
+      setSocket(newSocket);  // Set socket state
+      newSocket.on('connect', () => {
+        console.log('Socket connected:', newSocket.id); // Log when socket is connected
+      });
 
-    loadAssets();
-  }, []);
+      // Step 5: Handle player initialization and movement events
+      newSocket.on('initialize', (playerData) => {
+        console.log('Player initialized:', playerData); // Log player data
+        setPlayer(playerData);
+        setPlayerPosition({ x: playerData.x, y: playerData.y });
+        setPlayerKey(playerData.id.slice(0, 5));  // Shorten player ID for display
+      });
+
+      newSocket.on('playerMoved', (updatedPlayer) => {
+        console.log('Player moved:', updatedPlayer); // Log player movement
+        if (updatedPlayer.id === player?.id) {
+          setPlayerPosition({ x: updatedPlayer.x, y: updatedPlayer.y });
+        }
+      });
+
+      // Cleanup socket on unmount
+      return () => {
+        newSocket.off('initialize');
+        newSocket.off('playerMoved');
+        newSocket.close();
+        console.log('Socket disconnected');
+      };
+    } catch (error) {
+      console.error('Error during asset loading:', error);
+    }
+  };
+
+  loadAssetsAndInitSocket();
+}, []);  // Empty dependency array to ensure this runs only once
+
+
 
   if (isLoading) {
     return (
