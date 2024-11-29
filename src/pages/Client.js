@@ -60,7 +60,7 @@ const Client = () => {
 
         await Promise.all(
           data.map((obj) =>
-            preloadImage(`/assets/objects/${obj.location}`).then(() => {
+            preloadImage(`https://meta-farmers.s3.eu-north-1.amazonaws.com/assets/objects/${obj.location}`).then(() => {
               loadedCount++;
               setLoadingProgress(Math.round((loadedCount / totalObjects) * 100));
             })
