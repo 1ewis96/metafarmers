@@ -43,6 +43,17 @@ const Client = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [objects, setObjects] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [player, setPlayer] = useState(null);
+  const [playerKey, setPlayerKey] = useState('');
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  const movementSpeed = 40; // Default movement speed
+  const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
+  const [selectedSlot, setSelectedSlot] = useState(1);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
 useEffect(() => {
   const loadAssetsAndInitSocket = async () => {
@@ -113,8 +124,6 @@ useEffect(() => {
   loadAssetsAndInitSocket();
 }, []);  // Empty dependency array to ensure this runs only once
 
-
-
   if (isLoading) {
     return (
       <div style={splashScreenStyle}>
@@ -142,20 +151,7 @@ useEffect(() => {
       </div>
     );
   }
-  
-  
-  const [player, setPlayer] = useState(null);
-  const [playerKey, setPlayerKey] = useState('');
-  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [cellInfo, setCellInfo] = useState(null);
-  const [buildMode, setBuildMode] = useState(false);
-  const movementSpeed = 40; // Default movement speed
-  const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
-  const [selectedSlot, setSelectedSlot] = useState(1);
-const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
+    
 const handleMouseMove = (e) => {
   setMousePosition({ x: e.clientX, y: e.clientY });
   const mouseX = e.clientX - gridOffset.x;
