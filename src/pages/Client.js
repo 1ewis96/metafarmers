@@ -5,12 +5,29 @@ import Draggable from 'react-draggable'; // For dragging
 import { ResizableBox } from 'react-resizable'; // For resizing
 import 'react-resizable/css/styles.css'; // Import styles
 
-
 // Set up the socket connection with sessionKey
 
 const gridSize = 50; // Size of each grid square in pixels
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
+
+
+const Client = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [objects, setObjects] = useState([]);
+  const [socket, setSocket] = useState(null);
+  const [player, setPlayer] = useState(null);
+  const [playerKey, setPlayerKey] = useState('');
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const [cellInfo, setCellInfo] = useState(null);
+  const [buildMode, setBuildMode] = useState(false);
+  const movementSpeed = 40; // Default movement speed
+  const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
+  const [selectedSlot, setSelectedSlot] = useState(1);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
 const splashScreenStyle = {
   position: 'fixed',
@@ -38,22 +55,7 @@ const preloadImage = (src) => {
   });
 };
 
-const Client = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [objects, setObjects] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [player, setPlayer] = useState(null);
-  const [playerKey, setPlayerKey] = useState('');
-  const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [cellInfo, setCellInfo] = useState(null);
-  const [buildMode, setBuildMode] = useState(false);
-  const movementSpeed = 40; // Default movement speed
-  const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
-  const [selectedSlot, setSelectedSlot] = useState(1);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
 
 useEffect(() => {
   const loadAssetsAndInitSocket = async () => {
@@ -400,10 +402,6 @@ const renderObjects = () => {
   });
 };
 
-
-
-
-
 const renderRightClickMenu = () => {
   if (!rightClickMenu.visible) return null;
 
@@ -427,8 +425,7 @@ const renderRightClickMenu = () => {
   );
 };
 
-
-  // Handle click to open the cell info panel
+// Handle click to open the cell info panel
 // Handle click to open the cell info panel
 const handleCellClick = (e) => {
   const mouseX = e.clientX - viewportWidth / 2 + playerPosition.x;
@@ -725,7 +722,6 @@ const renderCellInfoPanel = () => {
   return null;
 };
 
-  
 
   return (
     <div
