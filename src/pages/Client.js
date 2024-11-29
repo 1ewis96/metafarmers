@@ -123,8 +123,14 @@ const toggleInventory = () => {
 
 const calculateAngle = () => {
   if (!playerPosition) return 0;
-  const dx = mousePosition.x - viewportWidth / 2; // Player is at screen center
-  const dy = mousePosition.y - viewportHeight / 2;
+
+  // Adjust mouse position relative to the player
+  const mouseX = mousePosition.x - gridOffset.x - playerPosition.x + viewportWidth / 2;
+  const mouseY = mousePosition.y - gridOffset.y - playerPosition.y + viewportHeight / 2;
+
+  const dx = mouseX - viewportWidth / 2; // Mouse relative to player
+  const dy = mouseY - viewportHeight / 2;
+
   return Math.atan2(dy, dx); // Angle in radians
 };
 
