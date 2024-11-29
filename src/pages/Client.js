@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import defaultObject from '../assets/objects/default.png';
-
+import Draggable from 'react-draggable'; // For dragging
+import { ResizableBox } from 'react-resizable'; // For resizing
+import 'react-resizable/css/styles.css'; // Import styles
 
 
 // Set up the socket connection with sessionKey
@@ -37,6 +39,87 @@ const handleMouseMove = (e) => {
   const cellY = Math.floor(mouseY / gridSize);
   setHoveredCell({ x: cellX, y: cellY });
 };
+
+
+const InventoryPopup = ({ visible, onClose }) => {
+  if (!visible) return null;
+
+  return (
+    <Draggable>
+      <ResizableBox
+        width={400}
+        height={300}
+        minConstraints={[200, 150]}
+        maxConstraints={[800, 600]}
+        resizeHandles={['se']}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '10%',
+            left: '10%',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            color: 'white',
+            border: '1px solid #444',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              padding: '10px',
+              backgroundColor: '#222',
+              cursor: 'move',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Inventory</span>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none',
+                color: 'white',
+                border: 'none',
+                fontSize: '16px',
+                cursor: 'pointer',
+              }}
+            >
+              ✖
+            </button>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              padding: '10px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+            }}
+          >
+            {/* Render inventory items here */}
+            <div style={{ width: '50px', height: '50px', backgroundColor: '#555' }}></div>
+            <div style={{ width: '50px', height: '50px', backgroundColor: '#555' }}></div>
+            {/* Add more inventory slots/items */}
+          </div>
+        </div>
+      </ResizableBox>
+    </Draggable>
+  );
+};
+
+
+const [inventoryVisible, setInventoryVisible] = useState(false);
+
+const toggleInventory = () => {
+  setInventoryVisible((prev) => !prev);
+};
+
 
 const calculateAngle = () => {
   if (!playerPosition) return 0;
@@ -84,8 +167,8 @@ const handleKeyDown = (e) => {
 };
 
 const renderHotbar = () => {
-  const slots = [1, 2, 3, 4, 5]; // Representing the 5 hotbar slots
-  const hotbarWidth = 300; // Total width of the hotbar
+  const slots = [1, 2, 3, 4, 5, 6]; // Add a sixth slot
+  const hotbarWidth = 360; // Adjust width for six slots
   const slotSize = hotbarWidth / slots.length;
 
   return (
@@ -114,10 +197,18 @@ const renderHotbar = () => {
             alignItems: 'center',
             width: `${slotSize}px`,
             height: '100%',
-            border: slot === selectedSlot ? '3px solid yellow' : '1px solid gray', // Yellow pixelated border for the selected slot
+            border: slot === selectedSlot ? '3px solid yellow' : '1px solid gray',
             backgroundColor: '#333',
             margin: '2px',
             boxShadow: slot === selectedSlot ? '0 0 5px yellow' : 'none',
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            if (slot === 6) {
+              toggleInventory(); // Open inventory if the sixth slot is clicked
+            } else {
+              setSelectedSlot(slot);
+            }
           }}
         >
           <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>{slot}</span>
@@ -126,7 +217,6 @@ const renderHotbar = () => {
     </div>
   );
 };
-
 
 // Fetch grid objects from API
 const fetchGridObjects = async (centerX, centerY) => {
@@ -539,6 +629,8 @@ const renderCellInfoPanel = () => {
 	  {renderWorldInfo()}
 	  {renderHandInfo()}
 	  {renderRightClickMenu()}
+	  <InventoryPopup visible={inventoryVisible} onClose={() => setInventoryVisible(false)} />
+
     </div>
   );
 };
