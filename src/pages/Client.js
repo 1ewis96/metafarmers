@@ -4,6 +4,7 @@ import defaultObject from '../assets/objects/default.png';
 import Draggable from 'react-draggable'; // For dragging
 import { ResizableBox } from 'react-resizable'; // For resizing
 import 'react-resizable/css/styles.css'; // Import styles
+import { Button } from 'react-bootstrap';
 
 
 // Set up the socket connection with sessionKey
@@ -29,14 +30,29 @@ const Client = () => {
   const movementSpeed = 40; // Default movement speed
   const [rightClickMenu, setRightClickMenu] = useState({ visible: false, x: 0, y: 0, object: null });
   const [selectedSlot, setSelectedSlot] = useState(1);
-const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+	 const [message, setMessage] = useState('');
 
+  const handleMessageChange = (e) => {
+    setMessage(e.target.value);
+  };
+  
+    const sendMessage = () => {
+    if (message.trim()) {
+      // Send the message to the server (you can call socket.emit here)
+      console.log('Sending message:', message);
+
+      // Clear the input after sending
+      setMessage('');
+    }
+  };
 const handleMouseMove = (e) => {
-  setMousePosition({ x: e.clientX, y: e.clientY });
-  const mouseX = e.clientX - gridOffset.x;
-  const mouseY = e.clientY - gridOffset.y;
+  const mouseX = e.clientX + playerPosition.x - viewportWidth / 2;
+  const mouseY = e.clientY + playerPosition.y - viewportHeight / 2;
+
   const cellX = Math.floor(mouseX / gridSize);
   const cellY = Math.floor(mouseY / gridSize);
+
   setHoveredCell({ x: cellX, y: cellY });
 };
 
@@ -113,13 +129,11 @@ const InventoryPopup = ({ visible, onClose }) => {
   );
 };
 
-
 const [inventoryVisible, setInventoryVisible] = useState(false);
 
 const toggleInventory = () => {
   setInventoryVisible((prev) => !prev);
 };
-
 
 const calculateAngle = () => {
   if (!playerPosition) return 0;
@@ -156,7 +170,6 @@ const renderTriangle = () => {
   );
 };
 
-
 const handleKeyDown = (e) => {
   if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
     socket.emit('move', { directions: [e.key.toUpperCase()], speed: movementSpeed });
@@ -171,6 +184,60 @@ const handleKeyDown = (e) => {
   }
   
 };
+
+
+const messageBox = () => {
+	return (
+   <div
+      style={{
+        position: 'absolute',
+        bottom: '2%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '600px',
+        height: '60px',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        border: '2px solid #888',
+        borderRadius: '10px',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-8px',
+		  left: '55%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+          width: '600px',
+        }}
+      >
+        {/* Use a basic input box instead of Form.Control */}
+        <input
+          type="text"
+          value={message}
+          onChange={handleMessageChange}
+          placeholder="Type your message"
+          style={{
+            width: '80%',
+            padding: '10px',
+            borderRadius: '5px',
+            border: '1px solid #ccc',
+            marginBottom: '10px',
+            fontSize: '16px',
+            color: '#333',
+          }}
+        />
+        <Button onClick={sendMessage} variant="dark" block>
+          Send
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 
 const renderHotbar = () => {
   const slots = [1, 2, 3, 4, 5, 6]; // Add a sixth slot
@@ -285,10 +352,6 @@ const renderObjects = () => {
   });
 };
 
-
-
-
-
 const renderRightClickMenu = () => {
   if (!rightClickMenu.visible) return null;
 
@@ -312,8 +375,6 @@ const renderRightClickMenu = () => {
   );
 };
 
-
-  // Handle click to open the cell info panel
 // Handle click to open the cell info panel
 const handleCellClick = (e) => {
   const mouseX = e.clientX - viewportWidth / 2 + playerPosition.x;
@@ -328,10 +389,8 @@ const handleCellClick = (e) => {
   });
 };
 
-
-
-  // Socket connection: handle player initialization and movement updates
-  useEffect(() => {
+// Socket connection: handle player initialization and movement updates
+useEffect(() => {
     socket.on('initialize', (playerData) => {
       setPlayer(playerData);
       setPlayerPosition({ x: playerData.x, y: playerData.y });
@@ -350,7 +409,7 @@ const handleCellClick = (e) => {
     };
   }, [player]);
 
-  // Update grid offset and fetch objects when the player position changes
+// Update grid offset and fetch objects when the player position changes
 useEffect(() => {
   if (playerPosition) {
     const currentCellX = Math.floor(playerPosition.x / gridSize);
@@ -368,9 +427,8 @@ useEffect(() => {
   }
 }, [playerPosition]);
 
-
-  // Add event listeners for mouse and keydown events
-  useEffect(() => {
+// Add event listeners for mouse and keydown events
+useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('click', handleCellClick);
     window.addEventListener('keydown', handleKeyDown);
@@ -391,9 +449,8 @@ useEffect(() => {
   };
 }, []);
 
-
-  // Render hazard banner when build mode is active
-  const renderHazardBanner = () => {
+// Render hazard banner when build mode is active
+const renderHazardBanner = () => {
     if (buildMode) {
       return (
         <div
@@ -426,7 +483,7 @@ useEffect(() => {
     return null;
   };
 
-  // Render the grid with lines and highlighted cell
+// Render the grid with lines and highlighted cell
 const renderGrid = () => {
   const cols = Math.ceil(viewportWidth / gridSize) + 2; // Add extra lines for smooth scrolling
   const rows = Math.ceil(viewportHeight / gridSize) + 2;
@@ -472,8 +529,8 @@ const renderGrid = () => {
 };
 
 
-  // Render the player on the screen
-  const renderPlayer = () => {
+// Render the player on the screen
+const renderPlayer = () => {
     if (player) {
       return (
         <div
@@ -506,8 +563,8 @@ const renderGrid = () => {
     return null;
   };
 
-  // Render the player info panel
-  const renderPlayerInfo = () => {
+// Render the player info panel
+const renderPlayerInfo = () => {
     if (player) {
       return (
         <div
@@ -585,7 +642,7 @@ const renderHandInfo = () => {
 	
 }
 
-  // Render the cell info panel
+// Render the cell info panel
 const renderCellInfoPanel = () => {
   if (cellInfo) {
     return (
@@ -601,7 +658,7 @@ const renderCellInfoPanel = () => {
         }}
       >
         <h4>Cell Info:</h4>
-        <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y}</p>
+        <p>Cell Position: X: {cellInfo.x} Y: {cellInfo.y} Mouse: X: {hoveredCell.x} Y: {hoveredCell.y}</p>
         <h4>Obj Info:</h4>
         <p>JSON</p>
       </div>
@@ -610,9 +667,7 @@ const renderCellInfoPanel = () => {
   return null;
 };
 
-  
-
-  return (
+return (
     <div
       style={{
         position: 'relative',
@@ -634,6 +689,7 @@ const renderCellInfoPanel = () => {
       {renderCellInfoPanel()}
 	  {renderWorldInfo()}
 	  {renderHandInfo()}
+	  {messageBox()}
 	  {renderRightClickMenu()}
 	  <InventoryPopup visible={inventoryVisible} onClose={() => setInventoryVisible(false)} />
 
