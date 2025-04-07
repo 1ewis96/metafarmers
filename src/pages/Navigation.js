@@ -24,13 +24,13 @@ const Navigation = () => {
       <Container>
         <Navbar.Brand as={Link} to="/">
           <img
-            src={`${s3Bucket}/static/logo.png`}
+            src={`${s3Bucket}/static/mf-logo.png`}
             alt="Logo"
             width="30"
             height="30"
             className="d-inline-block align-top me-2"
           />
-          BitTasker Docs
+          MetaFarmers
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbar-nav" />
         <Navbar.Collapse id="navbar-nav">
