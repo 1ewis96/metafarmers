@@ -42,7 +42,8 @@ function App() {
           <Route path="/registration" element={<Registration />} />  {/* Registration route */}
           <Route path="/login" element={<Login />} />  {/* Login route */}
           <Route path="/logout" element={<Logout />} />  {/* Logout route */}
-		  <Route path="/client" element={<Client />} />  {/* Logout route */}
+          <Route path="/client" element={<Client />} />  {/* Logout route */}
+          <Route path="/websocket" element={<Websocket />} />  {/* Logout route */}
 					
 					
           <Route path="*" element={<NotFound />} />       {/* Catch-all route for 404 */}
