@@ -8,7 +8,7 @@ import { Button } from 'react-bootstrap';
 
 
 // Set up the socket connection with sessionKey
-const socket = io('https://13.51.85.5', {
+const socket = io('http://13.51.85.5:3001', {
   query: {
     sessionKey: localStorage.getItem('sessionKey') || 'WPM4OVU3YyRZLUo', // Use a sessionKey from localStorage or set default
   },
