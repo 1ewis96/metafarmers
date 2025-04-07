@@ -1,70 +1,56 @@
-# Getting Started with Create React App
+BitTasker - The Core of MetaFarmers
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+BitTasker is the driving force behind MetaFarmers, an innovative 2D open-world cryptocurrency game that blends roleplaying, fast-paced action, and strategic territorial control. Inspired by classic online social and action experiences, MetaFarmers offers a dynamic environment filled with gangs, turfs, underground sewers, and high-stakes battles.
 
-## Available Scripts
+About MetaFarmers
 
-In the project directory, you can run:
+MetaFarmers is a browser-based game built with deep community engagement and cryptocurrency integration at its core. Players can explore an ever-evolving world, engage in intense combat, form alliances, and stake their claim in a decentralized gaming economy.
 
-### `npm start`
+Key Features:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Open-World Exploration – Roam a vast 2D world filled with opportunities and dangers.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Fast-Paced Action – Engage in skill-based combat, territorial battles, and strategic encounters.
 
-### `npm test`
+Gangs & Turf Wars – Form factions, control areas, and defend your turf.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Underground Sewers & Hidden Secrets – Discover hidden locations and rare in-game assets.
 
-### `npm run build`
+Ethereum-Based Economy – Own, trade, and earn through blockchain-powered assets.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The BitTasker Ecosystem & Token
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+As the backbone of MetaFarmers, BitTasker is gearing up for the launch of its Initial Coin Offering (ICO). The game’s economy will be powered by an Ethereum-based token, ensuring a secure and decentralized financial system.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+ICO & Token Utility:
 
-### `npm run eject`
+In-Game Transactions – Use the token for purchases, upgrades, and trading.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Play-to-Earn Mechanics – Earn cryptocurrency through gameplay and staking.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Decentralized Ownership – True asset ownership through blockchain integration.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Governance & Voting – Token holders influence game development and policies.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Roadmap
 
-## Learn More
+Q2 2025 – ICO launch and token distribution
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Q3 2025 – Early game beta access for token holders
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Q4 2025 – Full game release and integration of NFT-based assets
 
-### Code Splitting
+Beyond – Ongoing updates, new features, and community-driven expansions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Stay Connected
 
-### Analyzing the Bundle Size
+Website: [Coming Soon]
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Twitter: [Coming Soon]
 
-### Making a Progressive Web App
+Discord: [Coming Soon]
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Whitepaper: [Coming Soon]
 
-### Advanced Configuration
+Join us as we revolutionize crypto gaming and open-world roleplay with MetaFarmers. The future of blockchain gaming starts here! 🚀
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

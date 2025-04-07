@@ -1,0 +1,17 @@
+customHeaders:
+  - pattern: /images/*
+    headers:
+      # Cache control for images (cache for 1 day)
+      - key: Cache-Control
+        value: "public, max-age=86400"  # Cache for 1 day (86400 seconds)
+  - pattern: /**
+    headers:
+      # CORS headers (if needed)
+      - key: Access-Control-Allow-Origin
+        value: https://bittasker.xyz
+      - key: Access-Control-Allow-Credentials
+        value: "true"
+      - key: Access-Control-Allow-Headers
+        value: Content-Type
+      - key: Access-Control-Allow-Methods
+        value: GET, POST, PUT, DELETE, OPTIONS

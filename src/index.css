@@ -11,3 +11,49 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.app-store-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: black;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.2s ease;
+  border: 2px solid white;
+}
+
+.app-store-button svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+.app-store-button span {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: normal;
+}
+
+.app-store-button strong {
+  font-size: 16px;
+}
+
+.app-store-button:hover {
+  background: white;
+  color: black;
+  border: 2px solid black;
+}
+
+.app-store-button:hover svg {
+  fill: black;
+}
+
+.app-store-button:active {
+  transform: scale(0.95);
+}

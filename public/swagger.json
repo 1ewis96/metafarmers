@@ -1,0 +1,278 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "BitTasker API",
+    "description": "API documentation for the BitTasker platform.",
+    "version": "0.0.1"
+  },
+  "host": "api.bittasker.xyz", 
+  "schemes": ["https"],
+  "basePath": "/",
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter your bearer token as: Bearer {token}"
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/profile/avatar": {
+      "get": {
+        "summary": "Retrieve all available avatars",
+        "tags": ["Profile"],
+        "responses": {
+          "200": {
+            "description": "List of available avatars",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update the account avatar",
+        "tags": ["Profile"],
+        "parameters": [
+          {
+            "name": "avatar",
+            "in": "body",
+            "description": "ID of the avatar to set",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "avatar": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avatar successfully updated"
+          },
+          "400": {
+            "description": "Bad request (invalid avatar ID)"
+          }
+        }
+      }
+    },
+    "/profile/me": {
+      "get": {
+        "summary": "Retrieve user profile information",
+        "tags": ["Profile"],
+        "responses": {
+          "200": {
+            "description": "User profile information",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cognito/password": {
+      "post": {
+        "summary": "Update account password",
+        "tags": ["Authentication"],
+        "parameters": [
+          {
+            "name": "previousPassword",
+            "in": "body",
+            "description": "Previous password",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "newPassword",
+            "in": "body",
+            "description": "New password",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "confirmPassword",
+            "in": "body",
+            "description": "Confirmation of the new password",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password successfully updated"
+          },
+          "400": {
+            "description": "Bad request (password mismatch or invalid password)"
+          },
+          "401": {
+            "description": "Unauthorized (invalid or missing bearer token)"
+          }
+        }
+      }
+    },
+    "/cognito/auth/metamask": {
+      "post": {
+        "summary": "Generate nonce for MetaMask authentication",
+        "tags": ["Authentication"],
+        "parameters": [
+          {
+            "name": "ethAddress",
+            "in": "body",
+            "description": "Ethereum address for MetaMask authentication",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ethAddress": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nonce generated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "nonce": {
+                  "type": "string"
+                }
+              },
+              "example": {
+                "message": "Nonce generated and stored successfully",
+                "nonce": "87db7145-1e85-4621-9929-fd5c13d1b80d"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid Ethereum address)"
+          },
+          "401": {
+            "description": "Unauthorized (invalid or missing bearer token)"
+          }
+        }
+      }
+    },
+    "/cognito/auth/metamask/verify": {
+      "post": {
+        "summary": "Verify MetaMask signature and link Ethereum address",
+        "tags": ["Authentication"],
+        "parameters": [
+          {
+            "name": "verification",
+            "in": "body",
+            "description": "Ethereum address and signature for verification",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ethAddress": {
+                  "type": "string"
+                },
+                "signature": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ethereum address successfully verified and linked"
+          },
+          "400": {
+            "description": "Bad request (invalid Ethereum address or signature)"
+          },
+          "401": {
+            "description": "Unauthorized (invalid or missing bearer token)"
+          }
+        }
+      }
+    },
+    "/tx/balance": {
+  "get": {
+    "summary": "Retrieve user's TASK balance from Polygon",
+    "tags": ["Transaction"],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "TASK balance retrieved successfully",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "balance": {
+              "type": "string"
+            },
+            "symbol": {
+              "type": "string"
+            }
+          },
+          "example": {
+            "balance": "999999996.0",
+            "symbol": "TASK"
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized (invalid or missing bearer token)"
+      }
+    }
+  }
+    }
+  }
+}
