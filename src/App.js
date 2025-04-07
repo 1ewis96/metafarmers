@@ -16,6 +16,7 @@ import Logout from './pages/Logout';          // Import Logout component
 import Client from './pages/Client';          // Import Logout component
 import NotFound from './errors/NotFound';   // Import NotFound component
 import Developer from './pages/Developer';   // Import NotFound component
+import Websocket from './components/Client/Websocket'; // Import Websocket component
 
 function App() {
   // Check if sessionKey exists in cookies
