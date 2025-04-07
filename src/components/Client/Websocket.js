@@ -8,7 +8,7 @@ const Marketplace = () => {
 
   useEffect(() => {
     // Connect to your WebSocket server (change URL if needed)
-    ws.current = new WebSocket('wss://13.49.67.160'); // Echo server for testing
+    ws.current = new WebSocket('wss://13.51.85.5'); // Echo server for testing
 
     ws.current.onopen = () => {
       console.log('Connected to WebSocket');
