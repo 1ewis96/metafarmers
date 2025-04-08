@@ -73,6 +73,9 @@ const Navigation = () => {
                   <Dropdown.Item as={Link} to="/settings">
                     Settings
                   </Dropdown.Item>
+                  <Dropdown.Item as={Link} to="/demo/movement">
+                    Demos
+                  </Dropdown.Item>
                   <Dropdown.Item 
                     onClick={() => {
                       const logoutUrl = `${cognitoURL}/logout?client_id=${cognitoClientID}&logout_uri=${logoutReturnURL}`;
