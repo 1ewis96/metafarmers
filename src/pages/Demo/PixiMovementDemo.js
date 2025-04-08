@@ -86,8 +86,8 @@ const PixiMovementDemo = () => {
       // Reference the sprite for later use (mouse control)
       spriteRef.current = sprite;
 
-      const baseSpeed = 2; // Normal speed
-      const sprintSpeed = 4; // Sprinting speed
+      const baseSpeed = 3; // Normal speed
+      const sprintSpeed = 6; // Sprinting speed
       let speed = baseSpeed; // Current speed, defaults to normal speed
       let vx = 0;
       let vy = 0;
@@ -103,7 +103,7 @@ const PixiMovementDemo = () => {
           vx = vy = 0;
         }
 
-        // Horizontal movement logic (left or right)
+        // Handle horizontal and vertical movement logic
         if (keysState.current["ArrowRight"] || keysState.current["d"]) {
           vx = speed;
           lastDirection.current = "right"; // Update last direction
@@ -111,12 +111,11 @@ const PixiMovementDemo = () => {
         } else if (keysState.current["ArrowLeft"] || keysState.current["a"]) {
           vx = -speed;
           lastDirection.current = "left"; // Update last direction
-          sprite.texture = frames.left[lastFrame.current % numFrames];  // Ensure left uses the third row
+          sprite.texture = frames.left[lastFrame.current % numFrames]; // Ensure left uses the third row
         } else {
           vx = 0; // Stop horizontal movement if no key is pressed
         }
 
-        // Vertical movement logic (up or down)
         if (keysState.current["ArrowUp"] || keysState.current["w"]) {
           vy = -speed;
           lastDirection.current = "up"; // Update last direction
