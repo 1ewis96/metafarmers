@@ -13,6 +13,7 @@
     "ethers": "^6.13.5",
     "oidc-client-ts": "^3.1.0",
     "path-browserify": "^1.0.1",
+    "pixi.js": "^8.9.1",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^19.0.0",
@@ -23,12 +24,12 @@
     "swagger-ui-dist": "^5.20.1",
     "web-vitals": "^2.1.4"
   },
-"scripts": {
-  "start": "react-app-rewired start",
-  "build": "react-app-rewired build",
-  "test": "react-app-rewired test",
-  "eject": "react-app-rewired eject"
-},
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-app-rewired eject"
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
