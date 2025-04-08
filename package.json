@@ -5,9 +5,7 @@
   "dependencies": {
     "@pixi/core": "^7.4.3",
     "@pixi/graphics": "^7.4.3",
-    "@pixi/loaders": "^6.5.10",
     "@pixi/sprite": "^7.4.3",
-    "@pixi/text": "^7.4.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
