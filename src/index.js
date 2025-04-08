@@ -28,11 +28,11 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // Wrap the app with the AuthProvider to handle authentication
 root.render(
-  <React.StrictMode>
+ // <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
       <App />
     </AuthProvider>
-  </React.StrictMode>
+  //</React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
