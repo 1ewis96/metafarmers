@@ -5,6 +5,7 @@ import { UserProvider } from './context/UserContext'; // Import UserProvider
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import DemoMovement from './pages/Demo/Movement';
+import Map from './pages/Demo/Map/Map';
 import CognitoCallback from './hooks/auth/CognitoCallback';
 import CognitoCallbackClear from './hooks/auth/CognitoCallbackClear';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/demo/movement" element={<DemoMovement />} />
+          <Route path="/demo/map" element={<Map />} />
           <Route path="/auth/callback" element={<CognitoCallback />} />
           <Route path="/auth/callback/clear" element={<CognitoCallbackClear />} />
         </Routes>

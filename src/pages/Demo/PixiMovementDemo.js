@@ -25,8 +25,10 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
     s: false,
     d: false,
     Shift: false,
+    Control: false, // Add Control key state
   });
   const isShiftPressed = useRef(false);
+  const isLocked = useRef(false); // New ref to track lock state
   const lastDirection = useRef("right");
   const lastFrame = useRef(0);
   const isFocused = useRef(true);
@@ -118,40 +120,47 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         let vy = 0;
         let moving = false;
 
-        if (keys["ArrowRight"] || keys["d"]) {
-          vx = speed;
-          lastDirection.current = "right";
-          moving = true;
-        } else if (keys["ArrowLeft"] || keys["a"]) {
-          vx = -speed;
-          lastDirection.current = "left";
-          moving = true;
+        // Only allow movement if not locked
+        if (!isLocked.current) {
+          // Check for any active movement keys
+          if (keys["ArrowRight"] || keys["d"]) {
+            vx = speed;
+            lastDirection.current = "right";
+            moving = true;
+          } else if (keys["ArrowLeft"] || keys["a"]) {
+            vx = -speed;
+            lastDirection.current = "left";
+            moving = true;
+          }
+
+          if (keys["ArrowUp"] || keys["w"]) {
+            vy = -speed;
+            lastDirection.current = "up";
+            moving = true;
+          } else if (keys["ArrowDown"] || keys["s"]) {
+            vy = speed;
+            lastDirection.current = "down";
+            moving = true;
+          }
+
+          // Normalize diagonal movement
+          const len = Math.sqrt(vx * vx + vy * vy);
+          if (len > speed) {
+            vx = (vx / len) * speed;
+            vy = (vy / len) * speed;
+          }
         }
 
-        if (keys["ArrowUp"] || keys["w"]) {
-          vy = -speed;
-          lastDirection.current = "up";
-          moving = true;
-        } else if (keys["ArrowDown"] || keys["s"]) {
-          vy = speed;
-          lastDirection.current = "down";
-          moving = true;
-        }
-
-        // Normalize diagonal movement
-        const len = Math.sqrt(vx * vx + vy * vy);
-        if (len > speed) {
-          vx = (vx / len) * speed;
-          vy = (vy / len) * speed;
-        }
-
-        // Animate sprite
-        if (moving) {
+        // Only animate if moving and not locked
+        if (moving && !isLocked.current) {
           elapsed += delta;
           if (elapsed >= 60 / fps) {
             elapsed = 0;
             lastFrame.current = (lastFrame.current + 1) % numFrames;
           }
+        } else {
+          // Reset to first frame when not moving or locked
+          lastFrame.current = 0;
         }
 
         sprite.texture = frames[lastDirection.current][lastFrame.current];
@@ -160,10 +169,12 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         sprite.x = app.screen.width / 2;
         sprite.y = app.screen.height / 2;
 
-        // Move the world container (grid)
-        worldOffset.current.x -= vx;
-        worldOffset.current.y -= vy;
-        worldContainer.position.set(worldOffset.current.x, worldOffset.current.y);
+        // Move the world container (grid) only if moving and not locked
+        if (moving && !isLocked.current) {
+          worldOffset.current.x -= vx;
+          worldOffset.current.y -= vy;
+          worldContainer.position.set(worldOffset.current.x, worldOffset.current.y);
+        }
 
         // Report player state (world coordinates)
         if (onStateChange) {
@@ -171,8 +182,9 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
             x: Math.round(-worldOffset.current.x + app.screen.width / 2), // Adjust for initial offset
             y: Math.round(-worldOffset.current.y + app.screen.height / 2), // Adjust for initial offset
             direction: lastDirection.current,
-            isMoving: moving,
+            isMoving: moving && !isLocked.current,
             isSprinting: shift,
+            isLocked: isLocked.current, // Add locked state to callback
           });
         }
       });
@@ -181,11 +193,30 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
       const handleKeyDown = (e) => {
         keysState.current[e.key] = true;
         if (e.key === "Shift") isShiftPressed.current = true;
+        if (e.key === "Control") {
+          isLocked.current = !isLocked.current; // Toggle lock state
+          if (isLocked.current) {
+            // Reset movement when locking
+            lastFrame.current = 0;
+          }
+        }
       };
+
       const handleKeyUp = (e) => {
         keysState.current[e.key] = false;
-        if (e.key === "Shift") isShiftPressed.current = false;
+        if (e.key === "Shift") {
+          isShiftPressed.current = false;
+          // Check if no direction keys are pressed after releasing Shift
+          const anyDirectionPressed = Object.keys(keysState.current).some(key =>
+            key !== "Shift" && keysState.current[key] && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(key)
+          );
+          if (!anyDirectionPressed && !isLocked.current) {
+            // Reset movement
+            lastFrame.current = 0; // Reset to idle frame
+          }
+        }
       };
+
       const handleFocusIn = () => (isFocused.current = true);
       const handleFocusOut = () => (isFocused.current = false);
 

@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "gridSize": { "width": 30, "height": 30 },
+  "objects": [
+    {
+      "id": "obj4",
+      "type": "wall",
+      "position": { "x": 15, "y": 15 },
+      "properties": { "isExterior": true, "isBlocking": true, "canTransport": false }
+    },
+    {
+      "id": "obj5",
+      "type": "floor",
+      "position": { "x": 20, "y": 20 },
+      "properties": { "isExterior": true, "isWalkable": true, "canTransport": true, "destinationLevel": "level1" }
+    }
+  ],
+  "timestamp": "2025-04-11T12:00:00Z"
+}
