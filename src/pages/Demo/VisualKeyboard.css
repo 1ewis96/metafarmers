@@ -1,0 +1,32 @@
+.visual-keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+  
+  .vk-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  .vk-key {
+    padding: 12px 18px;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #222;
+    color: white;
+    font-family: monospace;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .vk-key.active {
+    background: #0f0;
+    color: #000;
+    border-color: #0f0;
+    transform: scale(1.1);
+  }
+  

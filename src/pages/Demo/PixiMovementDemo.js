@@ -5,13 +5,16 @@ import {
   Sprite,
   Rectangle,
   Assets,
-  SCALE_MODES
+  SCALE_MODES,
+  Graphics,
+  Container,
 } from "pixi.js";
 
-const PixiMovementDemo = () => {
+const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
   const pixiContainer = useRef(null);
   const appRef = useRef(null);
   const animationTicker = useRef(null);
+
   const keysState = useRef({
     ArrowUp: false,
     ArrowDown: false,
@@ -22,210 +25,189 @@ const PixiMovementDemo = () => {
     s: false,
     d: false,
     Shift: false,
-  }); // Tracks the state of keys
-  const isShiftPressed = useRef(false); // Track if shift is pressed
-  const spriteRef = useRef(null); // To reference the sprite
-  const lastDirection = useRef(null); // Track last movement direction
-  const lastFrame = useRef(0); // Track the last frame in movement
-  const isFocused = useRef(true); // Track whether the canvas is focused
+  });
+  const isShiftPressed = useRef(false);
+  const lastDirection = useRef("right");
+  const lastFrame = useRef(0);
+  const isFocused = useRef(true);
+  const worldOffset = useRef({ x: 0, y: 0 }); // Track world movement
 
   useEffect(() => {
     const run = async () => {
+      // Create PIXI app with dynamic size
       const app = new Application({
-        width: 512,
-        height: 512,
         backgroundColor: 0x222222,
         powerPreference: "high-performance",
+        resizeTo: pixiContainer.current, // Automatically resize to container
       });
-
       appRef.current = app;
 
+      // Add canvas to DOM
       if (pixiContainer.current) {
+        pixiContainer.current.innerHTML = "";
         pixiContainer.current.appendChild(app.view);
       }
 
-      // Load the new texture
+      // Load character sprite sheet
       const characterTexture = await Assets.load("/assets/character-1.png");
-
-      // Fix the texture filtering to improve scaling sharpness
       characterTexture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
       const baseTexture = characterTexture.baseTexture;
 
-      // Define frame size and number of frames per row
+      // Prepare animation frames
       const frameWidth = 32;
       const frameHeight = 32;
-      const numFrames = 8; // 8 frames per row
+      const numFrames = 8;
+      const directions = ["up", "right", "left", "down"];
+      const frames = { up: [], right: [], left: [], down: [] };
 
-      // Create walking frames for all 4 directions (up, right, left, down)
-      const directions = ['up', 'right', 'left', 'down'];
-      const frames = {
-        up: [],
-        right: [],
-        left: [],
-        down: []
-      };
-
-      // Extract frames for each direction from the sprite sheet
       for (let row = 0; row < 4; row++) {
         for (let i = 0; i < numFrames; i++) {
           const rect = new Rectangle(i * frameWidth, row * frameHeight, frameWidth, frameHeight);
-          const direction = directions[row];
-          frames[direction].push(new Texture(baseTexture, rect));
+          frames[directions[row]].push(new Texture(baseTexture, rect));
         }
       }
 
-      // Default sprite (starting with the "right" direction)
+      // Create a container for the world (grid)
+      const worldContainer = new Container();
+      app.stage.addChild(worldContainer); // Add world container first
+
+      // Draw fixed 2000x2000 grid
+      const tileSize = 64;
+      const gridSize = 2000;
+      const halfGridSize = gridSize / 2;
+      const gridGraphics = new Graphics();
+      gridGraphics.lineStyle(1, 0x444444, 1);
+
+      // Draw vertical lines
+      for (let x = -halfGridSize; x <= halfGridSize; x += tileSize) {
+        gridGraphics.moveTo(x, -halfGridSize);
+        gridGraphics.lineTo(x, halfGridSize);
+      }
+
+      // Draw horizontal lines
+      for (let y = -halfGridSize; y <= halfGridSize; y += tileSize) {
+        gridGraphics.moveTo(-halfGridSize, y);
+        gridGraphics.lineTo(halfGridSize, y);
+      }
+
+      worldContainer.addChild(gridGraphics);
+
+      // Create player sprite
       const sprite = new Sprite(frames.right[0]);
       sprite.anchor.set(0.5);
+      sprite.scale.set(2);
       sprite.x = app.screen.width / 2;
       sprite.y = app.screen.height / 2;
-      sprite.scale.set(2); // Uniform scale for visibility
+      app.stage.addChild(sprite); // Add player sprite after world container
 
-      app.stage.addChild(sprite);
+      // Center the grid under the player at start
+      worldContainer.position.set(-app.screen.width / 2, -app.screen.height / 2);
 
-      // Reference the sprite for later use (mouse control)
-      spriteRef.current = sprite;
-
-      const baseSpeed = 3; // Normal speed
-      const sprintSpeed = 6; // Sprinting speed
-      let speed = baseSpeed; // Current speed, defaults to normal speed
-      let vx = 0;
-      let vy = 0;
-
-      let currentFrame = 0;
+      // Animation control
       const fps = 10;
       let elapsed = 0;
 
-      // Ticker loop for movement
       animationTicker.current = app.ticker.add((delta) => {
-        if (!isFocused.current) {
-          // If the canvas is not focused, stop all movement
-          vx = vy = 0;
-        }
+        if (!isFocused.current) return;
 
-        // Handle horizontal and vertical movement logic
-        if (keysState.current["ArrowRight"] || keysState.current["d"]) {
+        const keys = keysState.current;
+        const shift = isShiftPressed.current;
+        const speed = shift ? sprintSpeed : walkSpeed;
+
+        let vx = 0;
+        let vy = 0;
+        let moving = false;
+
+        if (keys["ArrowRight"] || keys["d"]) {
           vx = speed;
-          lastDirection.current = "right"; // Update last direction
-          sprite.texture = frames.right[lastFrame.current % numFrames];
-        } else if (keysState.current["ArrowLeft"] || keysState.current["a"]) {
+          lastDirection.current = "right";
+          moving = true;
+        } else if (keys["ArrowLeft"] || keys["a"]) {
           vx = -speed;
-          lastDirection.current = "left"; // Update last direction
-          sprite.texture = frames.left[lastFrame.current % numFrames]; // Ensure left uses the third row
-        } else {
-          vx = 0; // Stop horizontal movement if no key is pressed
+          lastDirection.current = "left";
+          moving = true;
         }
 
-        if (keysState.current["ArrowUp"] || keysState.current["w"]) {
+        if (keys["ArrowUp"] || keys["w"]) {
           vy = -speed;
-          lastDirection.current = "up"; // Update last direction
-          sprite.texture = frames.up[lastFrame.current % numFrames];
-        } else if (keysState.current["ArrowDown"] || keysState.current["s"]) {
+          lastDirection.current = "up";
+          moving = true;
+        } else if (keys["ArrowDown"] || keys["s"]) {
           vy = speed;
-          lastDirection.current = "down"; // Update last direction
-          sprite.texture = frames.down[lastFrame.current % numFrames];
-        } else {
-          vy = 0; // Stop vertical movement if no key is pressed
+          lastDirection.current = "down";
+          moving = true;
         }
 
-        // Adjust speed for sprinting based on the Shift key state
-        if (isShiftPressed.current) {
-          speed = sprintSpeed;
-        } else {
-          speed = baseSpeed;
+        // Normalize diagonal movement
+        const len = Math.sqrt(vx * vx + vy * vy);
+        if (len > speed) {
+          vx = (vx / len) * speed;
+          vy = (vy / len) * speed;
         }
 
-        // Normalize diagonal movement to prevent faster movement diagonally
-        const length = Math.sqrt(vx * vx + vy * vy);
-        if (length > speed) {
-          vx = (vx / length) * speed;
-          vy = (vy / length) * speed;
-        }
-
-        // Update frame for animation if moving
-        const isMoving = vx !== 0 || vy !== 0;
-
-        if (isMoving) {
+        // Animate sprite
+        if (moving) {
           elapsed += delta;
           if (elapsed >= 60 / fps) {
             elapsed = 0;
             lastFrame.current = (lastFrame.current + 1) % numFrames;
           }
-        } else {
-          // When idle, use the last frame from the last direction
-          if (lastDirection.current) {
-            sprite.texture = frames[lastDirection.current][lastFrame.current % numFrames];
-          }
         }
 
-        sprite.x += vx;
-        sprite.y += vy;
+        sprite.texture = frames[lastDirection.current][lastFrame.current];
 
-        // Rotate the sprite to face the mouse cursor
-        const onMouseMove = (event) => {
-          const dx = event.data.global.x - sprite.x;
-          const dy = event.data.global.y - sprite.y;
-          const angle = Math.atan2(dy, dx); // Calculate the angle to the cursor
-          sprite.rotation = angle; // Rotate the sprite to face the cursor
-        };
+        // Lock player to center
+        sprite.x = app.screen.width / 2;
+        sprite.y = app.screen.height / 2;
 
-        // Listen to mousemove event
-        app.stage.on("mousemove", onMouseMove);
+        // Move the world container (grid)
+        worldOffset.current.x -= vx;
+        worldOffset.current.y -= vy;
+        worldContainer.position.set(worldOffset.current.x, worldOffset.current.y);
+
+        // Report player state (world coordinates)
+        if (onStateChange) {
+          onStateChange({
+            x: Math.round(-worldOffset.current.x + app.screen.width / 2), // Adjust for initial offset
+            y: Math.round(-worldOffset.current.y + app.screen.height / 2), // Adjust for initial offset
+            direction: lastDirection.current,
+            isMoving: moving,
+            isSprinting: shift,
+          });
+        }
       });
 
-      // Key listeners for movement
+      // Input handling
       const handleKeyDown = (e) => {
-        keysState.current[e.key] = true; // Mark key as pressed
-
-        // Track Shift key specifically
-        if (e.key === "Shift") {
-          isShiftPressed.current = true; // Set sprint speed when Shift is pressed
-        }
+        keysState.current[e.key] = true;
+        if (e.key === "Shift") isShiftPressed.current = true;
       };
-
       const handleKeyUp = (e) => {
-        keysState.current[e.key] = false; // Mark key as released
-
-        // Reset Shift speed when Shift key is released
-        if (e.key === "Shift") {
-          isShiftPressed.current = false; // Reset speed to baseSpeed
-        }
+        keysState.current[e.key] = false;
+        if (e.key === "Shift") isShiftPressed.current = false;
       };
+      const handleFocusIn = () => (isFocused.current = true);
+      const handleFocusOut = () => (isFocused.current = false);
 
-      // Focus handling to stop movement when the canvas is not focused
-      const handleFocusIn = () => {
-        isFocused.current = true;
-      };
-
-      const handleFocusOut = () => {
-        isFocused.current = false;
-        // Stop movement when focus is lost
-        vx = vy = 0;
-      };
-
-      // Adding event listeners
       window.addEventListener("keydown", handleKeyDown);
       window.addEventListener("keyup", handleKeyUp);
       window.addEventListener("focusin", handleFocusIn);
       window.addEventListener("focusout", handleFocusOut);
 
-      // Cleanup on component unmount
       return () => {
         app.destroy(true, { children: true });
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
         window.removeEventListener("focusin", handleFocusIn);
         window.removeEventListener("focusout", handleFocusOut);
-        if (animationTicker.current) {
-          animationTicker.current.destroy();
-        }
+        animationTicker.current?.destroy();
       };
     };
 
     run().catch(console.error);
-  }, []);
+  }, [walkSpeed, sprintSpeed, onStateChange]);
 
-  return <div ref={pixiContainer} />;
+  return <div ref={pixiContainer} style={{ height: "100%", width: "100%" }} />;
 };
 
 export default PixiMovementDemo;
