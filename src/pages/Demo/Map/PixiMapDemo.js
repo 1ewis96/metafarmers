@@ -25,7 +25,6 @@ const PixiMapDemo = ({
     const run = async () => {
       console.log("PixiMapDemo running, currentLevel:", currentLevel, "objects:", objects); // Debug log
       const levelData = await loadLevel(currentLevel);
-      setObjects(levelData.objects);
 
       const app = new Application({
         backgroundColor: 0x222222,
@@ -43,10 +42,11 @@ const PixiMapDemo = ({
       const gridContainer = new PixiContainer();
       app.stage.addChild(gridContainer);
       gridContainerRef.current = gridContainer;
+      const gridObjects = levelData.objects;
 
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
-          const obj = objects.find(o => o.position.x === x && o.position.y === y);
+          const obj = gridObjects.find(o => o.position.x === x && o.position.y === y);
           const cell = new Cell({
             x,
             y,
@@ -58,6 +58,7 @@ const PixiMapDemo = ({
           }).graphics;
           gridContainer.addChild(cell);
         }
+      setObjects(gridObjects);
       }
 
       let isDragging = false;

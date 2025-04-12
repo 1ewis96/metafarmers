@@ -25,68 +25,91 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
     s: false,
     d: false,
     Shift: false,
-    Control: false, // Add Control key state
+    Control: false,
   });
+
   const isShiftPressed = useRef(false);
-  const isLocked = useRef(false); // New ref to track lock state
+  const isLocked = useRef(false);
   const lastDirection = useRef("right");
   const lastFrame = useRef(0);
   const isFocused = useRef(true);
-  const worldOffset = useRef({ x: 0, y: 0 }); // Track world movement
+  const worldOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const run = async () => {
-      // Create PIXI app with dynamic size
       const app = new Application({
         backgroundColor: 0x222222,
         powerPreference: "high-performance",
-        resizeTo: pixiContainer.current, // Automatically resize to container
+        resizeTo: pixiContainer.current,
       });
+
       appRef.current = app;
 
-      // Add canvas to DOM
       if (pixiContainer.current) {
         pixiContainer.current.innerHTML = "";
         pixiContainer.current.appendChild(app.view);
       }
 
-      // Load character sprite sheet
-      const characterTexture = await Assets.load("/assets/character-1.png");
+      // Step 1: Fetch character list
+      const listRes = await fetch("https://api.metafarmers.io/list/characters");
+      const { skins } = await listRes.json();
+      const firstCharacterId = skins[0];
+
+      // Step 2: Fetch character data
+      const detailRes = await fetch(`https://api.metafarmers.io/character/${firstCharacterId}`);
+      const characterData = await detailRes.json();
+      const {
+        spriteSheet: {
+          url,
+          frameSize,
+          framesPerDirection,
+          directionMap,
+        },
+        render: {
+          scale,
+          anchor,
+        },
+      } = characterData;
+
+      // Step 3: Load texture
+      const characterTexture = await Assets.load(url);
       characterTexture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
       const baseTexture = characterTexture.baseTexture;
 
-      // Prepare animation frames
-      const frameWidth = 32;
-      const frameHeight = 32;
-      const numFrames = 8;
-      const directions = ["up", "right", "left", "down"];
-      const frames = { up: [], right: [], left: [], down: [] };
+      // Step 4: Build frames dynamically
+      const frames = {};
+      const directions = Object.keys(directionMap);
 
-      for (let row = 0; row < 4; row++) {
-        for (let i = 0; i < numFrames; i++) {
-          const rect = new Rectangle(i * frameWidth, row * frameHeight, frameWidth, frameHeight);
-          frames[directions[row]].push(new Texture(baseTexture, rect));
+      for (const direction of directions) {
+        const row = directionMap[direction];
+        frames[direction] = [];
+
+        for (let i = 0; i < framesPerDirection; i++) {
+          const rect = new Rectangle(
+            i * frameSize.width,
+            row * frameSize.height,
+            frameSize.width,
+            frameSize.height
+          );
+          frames[direction].push(new Texture(baseTexture, rect));
         }
       }
 
-      // Create a container for the world (grid)
+      // Create world container
       const worldContainer = new Container();
-      app.stage.addChild(worldContainer); // Add world container first
+      app.stage.addChild(worldContainer);
 
-      // Draw fixed 2000x2000 grid
       const tileSize = 64;
       const gridSize = 2000;
       const halfGridSize = gridSize / 2;
       const gridGraphics = new Graphics();
       gridGraphics.lineStyle(1, 0x444444, 1);
 
-      // Draw vertical lines
       for (let x = -halfGridSize; x <= halfGridSize; x += tileSize) {
         gridGraphics.moveTo(x, -halfGridSize);
         gridGraphics.lineTo(x, halfGridSize);
       }
 
-      // Draw horizontal lines
       for (let y = -halfGridSize; y <= halfGridSize; y += tileSize) {
         gridGraphics.moveTo(-halfGridSize, y);
         gridGraphics.lineTo(halfGridSize, y);
@@ -94,18 +117,17 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
 
       worldContainer.addChild(gridGraphics);
 
-      // Create player sprite
+      // Create sprite
       const sprite = new Sprite(frames.right[0]);
-      sprite.anchor.set(0.5);
-      sprite.scale.set(2);
+      sprite.anchor.set(anchor.x, anchor.y);
+      sprite.scale.set(scale);
       sprite.x = app.screen.width / 2;
       sprite.y = app.screen.height / 2;
-      app.stage.addChild(sprite); // Add player sprite after world container
+      app.stage.addChild(sprite);
 
-      // Center the grid under the player at start
       worldContainer.position.set(-app.screen.width / 2, -app.screen.height / 2);
 
-      // Animation control
+      // Animation ticker
       const fps = 10;
       let elapsed = 0;
 
@@ -120,9 +142,7 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         let vy = 0;
         let moving = false;
 
-        // Only allow movement if not locked
         if (!isLocked.current) {
-          // Check for any active movement keys
           if (keys["ArrowRight"] || keys["d"]) {
             vx = speed;
             lastDirection.current = "right";
@@ -143,7 +163,6 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
             moving = true;
           }
 
-          // Normalize diagonal movement
           const len = Math.sqrt(vx * vx + vy * vy);
           if (len > speed) {
             vx = (vx / len) * speed;
@@ -151,54 +170,45 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
           }
         }
 
-        // Only animate if moving and not locked
         if (moving && !isLocked.current) {
           elapsed += delta;
           if (elapsed >= 60 / fps) {
             elapsed = 0;
-            lastFrame.current = (lastFrame.current + 1) % numFrames;
+            lastFrame.current = (lastFrame.current + 1) % framesPerDirection;
           }
         } else {
-          // Reset to first frame when not moving or locked
           lastFrame.current = 0;
         }
 
         sprite.texture = frames[lastDirection.current][lastFrame.current];
 
-        // Lock player to center
         sprite.x = app.screen.width / 2;
         sprite.y = app.screen.height / 2;
 
-        // Move the world container (grid) only if moving and not locked
         if (moving && !isLocked.current) {
           worldOffset.current.x -= vx;
           worldOffset.current.y -= vy;
           worldContainer.position.set(worldOffset.current.x, worldOffset.current.y);
         }
 
-        // Report player state (world coordinates)
         if (onStateChange) {
           onStateChange({
-            x: Math.round(-worldOffset.current.x + app.screen.width / 2), // Adjust for initial offset
-            y: Math.round(-worldOffset.current.y + app.screen.height / 2), // Adjust for initial offset
+            x: Math.round(-worldOffset.current.x + app.screen.width / 2),
+            y: Math.round(-worldOffset.current.y + app.screen.height / 2),
             direction: lastDirection.current,
             isMoving: moving && !isLocked.current,
             isSprinting: shift,
-            isLocked: isLocked.current, // Add locked state to callback
+            isLocked: isLocked.current,
           });
         }
       });
 
-      // Input handling
       const handleKeyDown = (e) => {
         keysState.current[e.key] = true;
         if (e.key === "Shift") isShiftPressed.current = true;
         if (e.key === "Control") {
-          isLocked.current = !isLocked.current; // Toggle lock state
-          if (isLocked.current) {
-            // Reset movement when locking
-            lastFrame.current = 0;
-          }
+          isLocked.current = !isLocked.current;
+          if (isLocked.current) lastFrame.current = 0;
         }
       };
 
@@ -206,13 +216,14 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         keysState.current[e.key] = false;
         if (e.key === "Shift") {
           isShiftPressed.current = false;
-          // Check if no direction keys are pressed after releasing Shift
-          const anyDirectionPressed = Object.keys(keysState.current).some(key =>
-            key !== "Shift" && keysState.current[key] && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(key)
+          const anyDirectionPressed = Object.keys(keysState.current).some(
+            (key) =>
+              key !== "Shift" &&
+              keysState.current[key] &&
+              ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(key)
           );
           if (!anyDirectionPressed && !isLocked.current) {
-            // Reset movement
-            lastFrame.current = 0; // Reset to idle frame
+            lastFrame.current = 0;
           }
         }
       };
