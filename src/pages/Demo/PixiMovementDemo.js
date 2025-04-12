@@ -71,12 +71,18 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         },
       } = characterData;
 
-      // Step 3: Load texture
-      const characterTexture = await Assets.load(url);
+      // Step 3: Load texture with CORS handling
+      Assets.add({
+        alias: "characterTexture",
+        src: url,
+        data: { crossOrigin: "anonymous" },
+      });
+
+      const characterTexture = await Assets.load("characterTexture");
       characterTexture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
       const baseTexture = characterTexture.baseTexture;
 
-      // Step 4: Build frames dynamically
+      // Step 4: Build animation frames
       const frames = {};
       const directions = Object.keys(directionMap);
 
@@ -117,7 +123,7 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
 
       worldContainer.addChild(gridGraphics);
 
-      // Create sprite
+      // Create character sprite
       const sprite = new Sprite(frames.right[0]);
       sprite.anchor.set(anchor.x, anchor.y);
       sprite.scale.set(scale);
@@ -203,6 +209,7 @@ const PixiMovementDemo = ({ walkSpeed, sprintSpeed, onStateChange }) => {
         }
       });
 
+      // Input handling
       const handleKeyDown = (e) => {
         keysState.current[e.key] = true;
         if (e.key === "Shift") isShiftPressed.current = true;
