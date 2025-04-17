@@ -17,6 +17,9 @@ const PixiMapDemo = () => {
   const [availableObjects, setAvailableObjects] = useState([]);
   const [activeLayer, setActiveLayer] = useState("background");
 
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 3;
+
   useEffect(() => {
     const fetchLayers = async () => {
       try {
@@ -70,6 +73,40 @@ const PixiMapDemo = () => {
     const gridContainer = new PixiContainer();
     gridContainerRef.current = gridContainer;
     app.stage.addChild(gridContainer);
+
+    // --- Make the grid draggable ---
+    gridContainer.interactive = true;
+    gridContainer.cursor = 'grab';
+
+    let dragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let gridStart = { x: 0, y: 0 };
+
+    gridContainer.on('pointerdown', (event) => {
+      dragging = true;
+      dragStart = { x: event.data.global.x, y: event.data.global.y };
+      gridStart = { x: gridContainer.position.x, y: gridContainer.position.y };
+      gridContainer.cursor = 'grabbing';
+    });
+
+    gridContainer.on('pointermove', (event) => {
+      if (dragging) {
+        const dx = event.data.global.x - dragStart.x;
+        const dy = event.data.global.y - dragStart.y;
+        gridContainer.position.set(gridStart.x + dx, gridStart.y + dy);
+      }
+    });
+
+    gridContainer.on('pointerup', () => {
+      dragging = false;
+      gridContainer.cursor = 'grab';
+    });
+
+    gridContainer.on('pointerupoutside', () => {
+      dragging = false;
+      gridContainer.cursor = 'grab';
+    });
+    // --- End draggable code ---
 
     const gridManager = new GridManager(gridSize, availableLayers);
     gridManagerRef.current = gridManager;
@@ -168,9 +205,27 @@ const PixiMapDemo = () => {
     };
   }, [availableLayers, activeLayer]);
 
+  const zoomIn = () => {
+    if (gridContainerRef.current) {
+      let newScale = gridContainerRef.current.scale.x * 1.1;
+      newScale = Math.min(newScale, MAX_SCALE);
+      gridContainerRef.current.scale.set(newScale);
+    }
+  };
+
+  const zoomOut = () => {
+    if (gridContainerRef.current) {
+      let newScale = gridContainerRef.current.scale.x * 0.9;
+      newScale = Math.max(newScale, MIN_SCALE);
+      gridContainerRef.current.scale.set(newScale);
+    }
+  };
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <DragItemPanel items={availableObjects} />
+
+      {/* Layer Select */}
       <div style={{ position: "absolute", top: 10, right: 10 }}>
         <select
           value={activeLayer}
@@ -186,6 +241,13 @@ const PixiMapDemo = () => {
           ))}
         </select>
       </div>
+
+      {/* Zoom Buttons */}
+      <div style={{ position: "absolute", bottom: 10, right: 10, display: "flex", flexDirection: "column", gap: "10px" }}>
+        <button onClick={zoomIn} style={{ padding: "8px 12px" }}>Zoom In</button>
+        <button onClick={zoomOut} style={{ padding: "8px 12px" }}>Zoom Out</button>
+      </div>
+
       <div ref={pixiContainer} style={{ width: "100%", height: "100%" }} />
     </div>
   );
