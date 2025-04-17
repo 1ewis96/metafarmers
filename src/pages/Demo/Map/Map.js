@@ -7,6 +7,8 @@ import ContextMenu from "./ContextMenu";
 import { loadLevel } from "./utils/objectUtils";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/MapStyles.css";
+import ObjectBrowser from "./ObjectBrowser";
+
 
 const Map = () => {
   const [isBuildMode, setIsBuildMode] = useState(false);
@@ -170,6 +172,7 @@ const Map = () => {
           </Col>
         </Row>
       </Container>
+      <ObjectBrowser />
     </>
   );
 };

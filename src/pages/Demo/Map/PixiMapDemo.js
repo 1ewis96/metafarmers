@@ -1,167 +1,194 @@
-import React, { useEffect, useRef } from "react";
-import { Application, Container as PixiContainer, Graphics } from "pixi.js";
-import { drawHazardTape, handleDrag } from "./utils/gridUtils";
+import React, { useEffect, useRef, useState } from "react";
+import { Application, Container as PixiContainer, Graphics, Sprite } from "pixi.js";
+import { GridManager } from "./utils/GridManager";
+import DragItemPanel from "./components/DragItemPanel";
 
-const PixiMapDemo = ({
-  isBuildMode,
-  setIsBuildMode,
-  highlightedCell,
-  objects,
-  currentLevel,
-  onCellClick,
-  onCellRightClick,
-}) => {
+const PixiMapDemo = () => {
   const pixiContainer = useRef(null);
   const appRef = useRef(null);
   const gridContainerRef = useRef(null);
-  const [worldOffset, setWorldOffset] = React.useState({ x: 0, y: 0 });
+  const gridManagerRef = useRef(null);
+  const needsRedraw = useRef(false);
+  const objectInfoCache = useRef({});
+
   const tileSize = 64;
-  const gridSize = 30; // Adjusted for visibility
-  const gridPixelSize = gridSize * tileSize;
-  const halfGridSize = gridPixelSize / 2;
+  const gridSize = 30;
+  const [availableLayers, setAvailableLayers] = useState([]);
+  const [availableObjects, setAvailableObjects] = useState([]);
+  const [activeLayer, setActiveLayer] = useState("background");
 
   useEffect(() => {
-    const run = async () => {
-      console.log("PixiMapDemo running, objects:", objects);
-
-      const app = new Application({
-        backgroundColor: 0x222222,
-        resizeTo: pixiContainer.current,
-      });
-      appRef.current = app;
-
-      if (pixiContainer.current) {
-        pixiContainer.current.innerHTML = "";
-        pixiContainer.current.appendChild(app.view);
-      } else {
-        console.error("pixiContainer ref is null");
+    const fetchLayers = async () => {
+      try {
+        const res = await fetch("https://api.metafarmers.io/list/layers");
+        const data = await res.json();
+        setAvailableLayers(data.layers.map((l) => l.layer));
+        if (data.layers.length > 0) setActiveLayer(data.layers[0].layer);
+      } catch (err) {
+        console.error("Failed to fetch layers:", err);
       }
+    };
 
-      const gridContainer = new PixiContainer();
-      app.stage.addChild(gridContainer);
-      gridContainerRef.current = gridContainer;
+    const fetchObjects = async () => {
+      try {
+        const res = await fetch("https://api.metafarmers.io/list/objects");
+        const data = await res.json();
+        setAvailableObjects(data.objects || []);
+      } catch (err) {
+        console.error("Failed to fetch objects:", err);
+      }
+    };
 
-      // Draw grid with filled cells
+    fetchLayers();
+    fetchObjects();
+  }, []);
+
+  const fetchObjectInfo = async (objectName) => {
+    if (objectInfoCache.current[objectName]) {
+      return objectInfoCache.current[objectName];
+    }
+    const res = await fetch(`https://api.metafarmers.io/object/${objectName}`);
+    const data = await res.json();
+    objectInfoCache.current[objectName] = data;
+    return data;
+  };
+
+  useEffect(() => {
+    if (!availableLayers.length) return;
+
+    const app = new Application({
+      backgroundColor: 0x222222,
+      resizeTo: pixiContainer.current,
+    });
+    appRef.current = app;
+
+    if (pixiContainer.current) {
+      pixiContainer.current.innerHTML = "";
+      pixiContainer.current.appendChild(app.view);
+    }
+
+    const gridContainer = new PixiContainer();
+    gridContainerRef.current = gridContainer;
+    app.stage.addChild(gridContainer);
+
+    const gridManager = new GridManager(gridSize, availableLayers);
+    gridManagerRef.current = gridManager;
+
+    const drawGrid = () => {
+      const container = gridContainerRef.current;
+      container.removeChildren();
+
       const gridGraphics = new Graphics();
+
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
-          gridGraphics.beginFill(
-            objects.find(o => o.position.x === x && o.position.y === y && o.type === "wall")
-              ? 0x666666
-              : 0xf0f0f0
-          );
+          const obj = gridManager.get(x, y, activeLayer);
+          gridGraphics.beginFill(obj ? 0xcccccc : 0xf0f0f0);
           gridGraphics.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
           gridGraphics.endFill();
         }
       }
 
-      // Draw grid lines
       gridGraphics.lineStyle(1, 0x444444, 1);
       for (let x = 0; x <= gridSize; x++) {
         gridGraphics.moveTo(x * tileSize, 0);
-        gridGraphics.lineTo(x * tileSize, gridPixelSize);
+        gridGraphics.lineTo(x * tileSize, gridSize * tileSize);
       }
       for (let y = 0; y <= gridSize; y++) {
         gridGraphics.moveTo(0, y * tileSize);
-        gridGraphics.lineTo(gridPixelSize, y * tileSize);
+        gridGraphics.lineTo(gridSize * tileSize, y * tileSize);
       }
-      gridContainer.addChild(gridGraphics);
 
-      // Draw objects
-      objects.forEach(obj => {
-        const marker = new Graphics();
-        marker.beginFill(0xff0000, 0.5);
-        marker.drawCircle(
-          obj.position.x * tileSize + tileSize / 2,
-          obj.position.y * tileSize + tileSize / 2,
-          5
-        );
-        marker.endFill();
-        gridContainer.addChild(marker);
-      });
+      container.addChild(gridGraphics);
 
-      // Highlight square
-      const highlightGraphics = new Graphics();
-      if (highlightedCell) {
-        highlightGraphics.beginFill(0xffff00, 0.6);
-        highlightGraphics.drawRect(
-          highlightedCell.x * tileSize,
-          highlightedCell.y * tileSize,
-          tileSize,
-          tileSize
-        );
-        highlightGraphics.endFill();
-      }
-      gridContainer.addChild(highlightGraphics);
-
-      // Center grid
-      gridContainer.position.set(app.screen.width / 2 - halfGridSize, app.screen.height / 2 - halfGridSize);
-      setWorldOffset({ x: gridContainer.position.x, y: gridContainer.position.y });
-
-      let isDragging = false;
-      let startX, startY;
-
-      app.stage.eventMode = "static";
-      app.stage.on("pointerdown", (e) => {
-        if (!isBuildMode) {
-          isDragging = true;
-          startX = e.global.x;
-          startY = e.global.y;
-          app.stage.cursor = "grabbing";
-        } else {
-          const global = e.global;
-          const localX = global.x - gridContainer.position.x;
-          const localY = global.y - gridContainer.position.y;
-
-          const tileX = Math.floor(localX / tileSize);
-          const tileY = Math.floor(localY / tileSize);
-
-          if (e.data.button === 2) {
-            onCellRightClick(e.data.originalEvent, tileX, tileY);
-          } else {
-            onCellClick({ x: tileX, y: tileY });
+      // Draw sprites
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const obj = gridManager.get(x, y, activeLayer);
+          if (obj?.spriteUrl) {
+            const sprite = Sprite.from(obj.spriteUrl);
+            sprite.anchor.set(obj.anchor?.x || 0.5, obj.anchor?.y || 0.5);
+            sprite.scale.set(obj.scale || 1);
+            sprite.x = x * tileSize + tileSize / 2;
+            sprite.y = y * tileSize + tileSize / 2;
+            sprite.width = obj.frameSize?.width || tileSize;
+            sprite.height = obj.frameSize?.height || tileSize;
+            container.addChild(sprite);
           }
         }
-      });
-
-      app.stage.on("pointermove", (e) => {
-        if (isDragging && !isBuildMode) {
-          const dx = e.global.x - startX;
-          const dy = e.global.y - startY;
-          const newX = worldOffset.x + dx;
-          const newY = worldOffset.y + dy;
-          gridContainer.position.set(newX, newY);
-          setWorldOffset({ x: newX, y: newY });
-          startX = e.global.x;
-          startY = e.global.y;
-        }
-      });
-
-      app.stage.on("pointerup", () => {
-        isDragging = false;
-        if (!isBuildMode) app.stage.cursor = "grab";
-      });
-
-      const handleKeyDown = (e) => {
-        if (e.key === "b" || e.key === "B") {
-          setIsBuildMode((prev) => !prev);
-          drawHazardTape(app.stage, !isBuildMode, app.screen.width, app.screen.height);
-          app.stage.cursor = isBuildMode ? "default" : "grab";
-        }
-      };
-
-      window.addEventListener("keydown", handleKeyDown);
-
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-        app.destroy(true, { children: true });
-      };
+      }
     };
 
-    run().catch(console.error);
-  }, [isBuildMode, setIsBuildMode, highlightedCell, objects, currentLevel, onCellClick, onCellRightClick]);
+    app.ticker.add(() => {
+      if (needsRedraw.current) {
+        drawGrid();
+        needsRedraw.current = false;
+      }
+    });
 
-  return <div ref={pixiContainer} style={{ width: "100%", height: "100%" }} />;
+    needsRedraw.current = true;
+
+    pixiContainer.current.addEventListener("dragover", (e) => e.preventDefault());
+    pixiContainer.current.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const objectName = e.dataTransfer.getData("objectName");
+      const rect = pixiContainer.current.getBoundingClientRect();
+      const localX = e.clientX - rect.left;
+      const localY = e.clientY - rect.top;
+      const tileX = Math.floor((localX - gridContainer.position.x) / tileSize);
+      const tileY = Math.floor((localY - gridContainer.position.y) / tileSize);
+
+      if (objectName) {
+        const fullInfo = await fetchObjectInfo(objectName);
+        gridManager.set(tileX, tileY, activeLayer, {
+          name: objectName,
+          spriteUrl: fullInfo.spriteSheet.url,
+          frameSize: fullInfo.spriteSheet.frameSize,
+          scale: fullInfo.render?.scale || 1,
+          anchor: fullInfo.render?.anchor || { x: 0.5, y: 0.5 },
+        });
+
+        await fetch("https://api.metafarmers.io/layer/object/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            layer: activeLayer,
+            object: objectName,
+            x: tileX,
+            y: tileY,
+          }),
+        });
+
+        needsRedraw.current = true;
+      }
+    });
+
+    return () => {
+      app.destroy(true, { children: true });
+    };
+  }, [availableLayers, activeLayer]);
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <DragItemPanel items={availableObjects} />
+      <div style={{ position: "absolute", top: 10, right: 10 }}>
+        <select
+          value={activeLayer}
+          onChange={(e) => {
+            setActiveLayer(e.target.value);
+            needsRedraw.current = true;
+          }}
+        >
+          {availableLayers.map((layer) => (
+            <option key={layer} value={layer}>
+              {layer}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div ref={pixiContainer} style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
 };
 
 export default PixiMapDemo;
