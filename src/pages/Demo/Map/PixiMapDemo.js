@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Application, Container as PixiContainer, Graphics, Sprite } from "pixi.js";
+import { Application, Container as PixiContainer, Graphics, Sprite, Texture } from "pixi.js";
+
 import { GridManager } from "./utils/GridManager";
 import DragItemPanel from "./components/DragItemPanel";
 
@@ -36,7 +37,12 @@ const PixiMapDemo = () => {
       try {
         const res = await fetch("https://api.metafarmers.io/list/objects");
         const data = await res.json();
-        setAvailableObjects(data.objects || []);
+        setAvailableObjects(
+          (data.objects || []).map(obj => ({
+            name: obj.name,
+            spriteUrl: obj.spriteSheet?.url || "",
+          }))
+        );
       } catch (err) {
         console.error("Failed to fetch objects:", err);
       }
@@ -75,7 +81,7 @@ const PixiMapDemo = () => {
     app.stage.addChild(gridContainer);
 
     // --- Make the grid draggable ---
-    gridContainer.interactive = true;
+    gridContainer.eventMode = 'static';
     gridContainer.cursor = 'grab';
 
     let dragging = false;
@@ -111,7 +117,7 @@ const PixiMapDemo = () => {
     const gridManager = new GridManager(gridSize, availableLayers);
     gridManagerRef.current = gridManager;
 
-    const drawGrid = () => {
+    const drawGrid = async () => {
       const container = gridContainerRef.current;
       container.removeChildren();
 
@@ -143,7 +149,11 @@ const PixiMapDemo = () => {
         for (let x = 0; x < gridSize; x++) {
           const obj = gridManager.get(x, y, activeLayer);
           if (obj?.spriteUrl) {
-            const sprite = Sprite.from(obj.spriteUrl);
+            const texture = await Texture.fromURL(obj.spriteUrl, {
+              crossOrigin: 'anonymous',
+              resourceOptions: { crossOrigin: 'anonymous' }
+            });
+            const sprite = new Sprite(texture);
             sprite.anchor.set(obj.anchor?.x || 0.5, obj.anchor?.y || 0.5);
             sprite.scale.set(obj.scale || 1);
             sprite.x = x * tileSize + tileSize / 2;
@@ -156,9 +166,9 @@ const PixiMapDemo = () => {
       }
     };
 
-    app.ticker.add(() => {
+    app.ticker.add(async () => {
       if (needsRedraw.current) {
-        drawGrid();
+        await drawGrid();
         needsRedraw.current = false;
       }
     });
@@ -243,7 +253,10 @@ const PixiMapDemo = () => {
       </div>
 
       {/* Zoom Buttons */}
-      <div style={{ position: "absolute", bottom: 10, right: 10, display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{
+        position: "absolute", bottom: 10, right: 10,
+        display: "flex", flexDirection: "column", gap: "10px"
+      }}>
         <button onClick={zoomIn} style={{ padding: "8px 12px" }}>Zoom In</button>
         <button onClick={zoomOut} style={{ padding: "8px 12px" }}>Zoom Out</button>
       </div>

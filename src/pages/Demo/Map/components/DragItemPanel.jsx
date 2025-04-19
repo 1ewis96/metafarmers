@@ -1,8 +1,15 @@
-import React from "react";
+import React, { useRef } from "react";
 
 const DragItemPanel = ({ items }) => {
-  const handleDragStart = (e, itemName) => {
+  const dragImageRef = useRef(null);
+
+  const handleDragStart = (e, itemName, spriteUrl) => {
     e.dataTransfer.setData("objectName", itemName);
+
+    if (dragImageRef.current) {
+      dragImageRef.current.src = spriteUrl; // update the image source
+      e.dataTransfer.setDragImage(dragImageRef.current, 32, 32); // center the drag image
+    }
   };
 
   return (
@@ -18,12 +25,15 @@ const DragItemPanel = ({ items }) => {
       maxHeight: "80vh",
       overflowY: "auto",
     }}>
+      {/* Hidden drag image */}
+      <img ref={dragImageRef} style={{ position: "absolute", top: "-1000px", pointerEvents: "none" }} alt="drag" />
+
       <h4>Objects</h4>
       {items.map((item) => (
         <div
-          key={item}
+          key={item.name}
           draggable
-          onDragStart={(e) => handleDragStart(e, item)}
+          onDragStart={(e) => handleDragStart(e, item.name, item.spriteUrl)}
           style={{
             marginBottom: "8px",
             padding: "8px",
@@ -33,7 +43,8 @@ const DragItemPanel = ({ items }) => {
             textAlign: "center",
           }}
         >
-          {item}
+          <img src={item.spriteUrl} alt={item.name} style={{ width: "32px", height: "32px", objectFit: "contain", marginBottom: "4px" }} />
+          <div>{item.name}</div>
         </div>
       ))}
     </div>
