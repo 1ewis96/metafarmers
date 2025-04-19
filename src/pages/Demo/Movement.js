@@ -1,27 +1,14 @@
+// Movement.js
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Button,
-  Form,
-  InputGroup,
-  ProgressBar,
-} from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Form, InputGroup, ProgressBar } from "react-bootstrap";
 import Navigation from "../Navigation";
 import PixiMovementDemo from "./PixiMovementDemo";
 
 const DemoMovement = () => {
   const [consoleLines, setConsoleLines] = useState([]);
   const [command, setCommand] = useState("");
-  const [directionPressed, setDirectionPressed] = useState({
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-  });
-
+  const [skins, setSkins] = useState([]);
+  const [selectedSkin, setSelectedSkin] = useState("");
   const [characterState, setCharacterState] = useState({
     x: 0,
     y: 0,
@@ -29,22 +16,34 @@ const DemoMovement = () => {
     isMoving: false,
     isSprinting: false,
   });
-
   const [speed, setSpeed] = useState({
     walk: 3,
     sprint: 6,
   });
+
+  useEffect(() => {
+    // Fetch available skins
+    const fetchSkins = async () => {
+      try {
+        const res = await fetch("https://api.metafarmers.io/list/characters");
+        const data = await res.json();
+        if (data.skins && data.skins.length > 0) {
+          setSkins(data.skins);
+          setSelectedSkin(data.skins[0]); // Pick first skin
+        }
+      } catch (error) {
+        console.error("Failed to fetch skins:", error);
+      }
+    };
+
+    fetchSkins();
+  }, []);
 
   const handleCommandSubmit = () => {
     if (command.trim() === "") return;
     setConsoleLines((prev) => [...prev, `> ${command}`]);
     setCommand("");
   };
-
-  // Dev: Simulated live state update (no longer needed with Pixi handling movement)
-  useEffect(() => {
-    // Removed random movement simulation since Pixi now handles it
-  }, []);
 
   return (
     <>
@@ -62,9 +61,16 @@ const DemoMovement = () => {
             <Card className="bg-dark text-white">
               <Card.Header className="d-flex justify-content-between align-items-center">
                 <span>Live Movement Demo</span>
-                <Form.Select style={{ width: "200px" }}>
-                  <option>Default Skin</option>
-                  <option>Future Skin 1</option>
+                <Form.Select
+                  style={{ width: "200px" }}
+                  value={selectedSkin}
+                  onChange={(e) => setSelectedSkin(e.target.value)}
+                >
+                  {skins.map((skin) => (
+                    <option key={skin} value={skin}>
+                      {skin}
+                    </option>
+                  ))}
                 </Form.Select>
               </Card.Header>
 
@@ -78,30 +84,14 @@ const DemoMovement = () => {
                     width: "100%",
                   }}
                 >
-                  <PixiMovementDemo
-                    walkSpeed={speed.walk}
-                    sprintSpeed={speed.sprint}
-                    onStateChange={setCharacterState}
-                  />
-                </div>
-
-                {/* Direction Buttons */}
-                <div className="text-center mt-4">
-                  {["up", "left", "down", "right"].map((dir) => (
-                    <Button
-                      key={dir}
-                      variant={directionPressed[dir] ? "primary" : "secondary"}
-                      onClick={() =>
-                        setDirectionPressed((prev) => ({
-                          ...prev,
-                          [dir]: !prev[dir],
-                        }))
-                      }
-                      className="mx-1"
-                    >
-                      {dir === "up" ? "↑" : dir === "down" ? "↓" : dir === "left" ? "←" : "→"}
-                    </Button>
-                  ))}
+                  {selectedSkin && (
+                    <PixiMovementDemo
+                      walkSpeed={speed.walk}
+                      sprintSpeed={speed.sprint}
+                      onStateChange={setCharacterState}
+                      skinId={selectedSkin} // ✅ Pass the skinId
+                    />
+                  )}
                 </div>
 
                 {/* Speed Sliders */}
