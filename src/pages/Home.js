@@ -1,4 +1,3 @@
-// src/pages/ObjectViewer.js
 import React, { useEffect, useRef, useState } from "react";
 import { Container, ProgressBar } from "react-bootstrap";
 import * as PIXI from "pixi.js";
@@ -201,7 +200,7 @@ const ObjectViewer = () => {
     fetchTextures();
   }, [app]);
 
-  const placeObjectOnGrid = (texture, gridX, gridY, width = 1, height = 1, objectName = null) => {
+  const placeObjectOnGrid = (texture, gridX, gridY, width = 1, height = 1, objectName = null, rotation = 0) => {
     const sprite = new PIXI.Sprite(texture);
 
     sprite.anchor.set(0.5, 0.5);
@@ -209,10 +208,12 @@ const ObjectViewer = () => {
     sprite.height = height * TILE_SIZE;
     sprite.x = gridX * TILE_SIZE + sprite.width / 2;
     sprite.y = gridY * TILE_SIZE + sprite.height / 2;
+    sprite.rotation = (rotation * Math.PI) / 180; // Convert degrees to radians
 
     sprite.metaTileX = gridX;
     sprite.metaTileY = gridY;
     sprite.metaObjectName = objectName;
+    sprite.metaRotation = rotation; // Store rotation in degrees
 
     app.stage.addChild(sprite);
 
@@ -248,9 +249,18 @@ const ObjectViewer = () => {
         const objectId = item.object;
         const x = item.x;
         const y = item.y;
+        const rotation = item.rotation || 0; // Default to 0 if rotation not provided
 
         if (textureCache.current[objectId]) {
-          const sprite = placeObjectOnGrid(textureCache.current[objectId].texture, x, y, 1, 1, objectId);
+          const sprite = placeObjectOnGrid(
+            textureCache.current[objectId].texture,
+            x,
+            y,
+            1,
+            1,
+            objectId,
+            rotation
+          );
           placedSprites.current.push(sprite);
         }
       });
@@ -293,12 +303,13 @@ const ObjectViewer = () => {
             object: objectName,
             x: tileX,
             y: tileY,
+            rotation: 0, // Default rotation
           }),
         });
 
         const data = await res.json();
         if (data.message === "success") {
-          const sprite = placeObjectOnGrid(textureCache.current[objectName].texture, tileX, tileY, 1, 1, objectName);
+          const sprite = placeObjectOnGrid(textureCache.current[objectName].texture, tileX, tileY, 1, 1, objectName, 0);
           placedSprites.current.push(sprite);
         }
       } catch (err) {
@@ -333,7 +344,12 @@ const ObjectViewer = () => {
       });
 
       if (foundSprite) {
-        setSelectedCell({ x: tileX, y: tileY, objectName: foundSprite.metaObjectName });
+        setSelectedCell({
+          x: tileX,
+          y: tileY,
+          objectName: foundSprite.metaObjectName,
+          rotation: foundSprite.metaRotation,
+        });
       } else {
         setSelectedCell({ x: tileX, y: tileY, objectName: null });
       }
@@ -377,6 +393,51 @@ const ObjectViewer = () => {
       }
     } catch (err) {
       console.error("Error ejecting object:", err);
+    }
+  };
+
+  const handleRotate = async () => {
+    if (!selectedCell || !selectedCell.objectName) return;
+
+    const sprite = placedSprites.current.find(
+      (s) =>
+        s.metaTileX === selectedCell.x &&
+        s.metaTileY === selectedCell.y &&
+        s.metaObjectName === selectedCell.objectName
+    );
+    if (!sprite) return;
+
+    // Rotate by 90 degrees
+    const newRotation = (sprite.metaRotation + 90) % 360;
+    sprite.rotation = (newRotation * Math.PI) / 180; // Update PIXI rotation (in radians)
+    sprite.metaRotation = newRotation; // Update meta data (in degrees)
+
+    const compositeKey = `${selectedCell.objectName}#${selectedCell.x}#${selectedCell.y}`;
+
+    try {
+      const res = await fetch("https://api.metafarmers.io/layer/object/rotate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          layer: currentLayer,
+          compositeKey,
+          rotation: newRotation,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.message === "success") {
+        setSelectedCell({ ...selectedCell, rotation: newRotation });
+      } else {
+        // Revert rotation if API fails
+        sprite.rotation = (sprite.metaRotation * Math.PI) / 180;
+        sprite.metaRotation = selectedCell.rotation;
+      }
+    } catch (err) {
+      console.error("Error rotating object:", err);
+      // Revert rotation on error
+      sprite.rotation = (sprite.metaRotation * Math.PI) / 180;
+      sprite.metaRotation = selectedCell.rotation;
     }
   };
 
@@ -461,7 +522,15 @@ const ObjectViewer = () => {
             {selectedCell.objectName ? (
               <>
                 <p><strong>Object:</strong> {selectedCell.objectName}</p>
+                <p><strong>Rotation:</strong> {selectedCell.rotation || 0}°</p>
                 <button onClick={handleEject}>Eject</button>
+                <button
+                  onClick={handleRotate}
+                  style={{ marginLeft: "10px" }}
+                  disabled={!selectedCell.objectName}
+                >
+                  Rotate
+                </button>
               </>
             ) : (
               <p><em>No object placed</em></p>
