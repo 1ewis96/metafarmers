@@ -4,7 +4,7 @@ import { UserProvider } from './context/UserContext'; // Import UserProvider
 
 import Home from './pages/Home';
 import Settings from './pages/Settings';
-import DemoMovement from './pages/Demo/Movement';
+import DemoMovement from './pages/Demo/Movement/MovementDemo';
 import ObjectViewer from './pages/Demo/Map/ObjectViewer';
 import HabboDemoPage from './pages/Client';
 import CognitoCallback from './hooks/auth/CognitoCallback';
