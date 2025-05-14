@@ -84,23 +84,51 @@ const useMapInteractions = ({
   useEffect(() => {
     if (!app) return;
 
+    const updateHitArea = () => {
+      const canvasWidth = app.renderer.width;
+      const canvasHeight = app.renderer.height;
+      const stageX = app.stage.x;
+      const stageY = app.stage.y;
+      const scale = app.stage.scale.x;
+
+      const worldLeft = -stageX / scale;
+      const worldTop = -stageY / scale;
+      const worldRight = (canvasWidth - stageX) / scale;
+      const worldBottom = (canvasHeight - stageY) / scale;
+
+      app.stage.hitArea = new PIXI.Rectangle(
+        worldLeft,
+        worldTop,
+        worldRight - worldLeft,
+        worldBottom - worldTop
+      );
+      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom });
+    };
+
+    updateHitArea();
+    app.stage.on('pointermove', updateHitArea);
+
+    return () => {
+      app.stage.off('pointermove', updateHitArea);
+    };
+  }, [app]);
+
+  useEffect(() => {
+    if (!app) return;
+
     const handlePointerMove = (e) => {
       const mouseX = (e.data.global.x - app.stage.x) / app.stage.scale.x;
       const mouseY = (e.data.global.y - app.stage.y) / app.stage.scale.y;
       const tileX = Math.floor(mouseX / TILE_SIZE);
       const tileY = Math.floor(mouseY / TILE_SIZE);
-      if (tileX >= 0 && tileX < GRID_SIZE && tileY >= 0 && tileY < GRID_SIZE) {
-        hoverBorder.current.clear();
-        hoverBorder.current.lineStyle(3, 0xffff00, 1);
-        hoverBorder.current.drawRect(
-          tileX * TILE_SIZE - 1,
-          tileY * TILE_SIZE - 1,
-          TILE_SIZE + 2,
-          TILE_SIZE + 2
-        );
-      } else {
-        hoverBorder.current.clear();
-      }
+      hoverBorder.current.clear();
+      hoverBorder.current.lineStyle(3, 0xffff00, 1);
+      hoverBorder.current.drawRect(
+        tileX * TILE_SIZE - 1,
+        tileY * TILE_SIZE - 1,
+        TILE_SIZE + 2,
+        TILE_SIZE + 2
+      );
     };
 
     app.stage.on("pointermove", handlePointerMove);
