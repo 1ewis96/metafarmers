@@ -3,7 +3,7 @@ import * as PIXI from "pixi.js";
 import usePixiApp from "./usePixiApp";
 import useMapInteractions from "./useMapInteractions";
 import useLayerLoader from "./useLayerLoader";
-import { TILE_SIZE, GRID_SIZE } from "./constants";
+import { TILE_SIZE } from "./constants";
 
 const MainCanvas = ({
   pixiContainer,
@@ -11,12 +11,13 @@ const MainCanvas = ({
   placedSprites,
   currentLayer,
   setSelectedCell,
-  setTextureCanvases,
+  setTextureCanvases, 
   setSpriteUpdateCounter,
   loading,
   texturesLoaded,
   fetchTexturesAndLayers,
   setGridBounds,
+  layerDimensions
 }) => {
   const hoverBorder = useRef(null);
   const app = usePixiApp({
@@ -34,28 +35,36 @@ const MainCanvas = ({
     setSpriteUpdateCounter,
   });
 
+  const getCurrentLayerDimensions = () => {
+    const layerData = layerDimensions.find(layer => layer.layer === currentLayer);
+    return layerData ? { width: layerData.width, height: layerData.height } : { width: 30, height: 30 };
+  };
+
   useEffect(() => {
     if (!app) return;
 
     const drawGrid = () => {
+      const { width, height } = getCurrentLayerDimensions();
       const gridGraphics = new PIXI.Graphics();
       gridGraphics.beginFill(0xf0f0f0);
-      gridGraphics.drawRect(0, 0, GRID_SIZE * TILE_SIZE, GRID_SIZE * TILE_SIZE);
+      gridGraphics.drawRect(0, 0, width * TILE_SIZE, height * TILE_SIZE);
       gridGraphics.endFill();
       gridGraphics.lineStyle(1, 0x444444, 1);
-      for (let i = 0; i <= GRID_SIZE; i++) {
+      for (let i = 0; i <= width; i++) {
         gridGraphics.moveTo(i * TILE_SIZE, 0);
-        gridGraphics.lineTo(i * TILE_SIZE, GRID_SIZE * TILE_SIZE);
+        gridGraphics.lineTo(i * TILE_SIZE, height * TILE_SIZE);
+      }
+      for (let i = 0; i <= height; i++) {
         gridGraphics.moveTo(0, i * TILE_SIZE);
-        gridGraphics.lineTo(GRID_SIZE * TILE_SIZE, i * TILE_SIZE);
+        gridGraphics.lineTo(width * TILE_SIZE, i * TILE_SIZE);
       }
       app.stage.addChild(gridGraphics);
       hoverBorder.current = new PIXI.Graphics();
       app.stage.addChild(hoverBorder.current);
 
       // Center the stage
-      const gridWidth = GRID_SIZE * TILE_SIZE; // 1920px
-      const gridHeight = GRID_SIZE * TILE_SIZE; // 1920px
+      const gridWidth = width * TILE_SIZE;
+      const gridHeight = height * TILE_SIZE;
       const canvasWidth = app.renderer.width;
       const canvasHeight = app.renderer.height;
       app.stage.x = (canvasWidth - gridWidth) / 2;
@@ -66,7 +75,7 @@ const MainCanvas = ({
     if (!loading) {
       drawGrid();
     }
-  }, [app, loading]);
+  }, [app, loading, currentLayer, layerDimensions]);
 
   useEffect(() => {
     if (app) {
@@ -103,14 +112,15 @@ const MainCanvas = ({
           }
         });
 
-        // Fallback to GRID_SIZE if no sprites or invalid bounds
-        maxX = maxX > 0 ? Math.min(maxX, GRID_SIZE) : GRID_SIZE;
-        maxY = maxY > 0 ? Math.min(maxY, GRID_SIZE) : GRID_SIZE;
+        // Fallback to layer dimensions if no sprites or invalid bounds
+        const { width, height } = getCurrentLayerDimensions();
+        maxX = maxX > 0 ? Math.min(maxX, width) : width;
+        maxY = maxY > 0 ? Math.min(maxY, height) : height;
         setGridBounds({ width: maxX, height: maxY });
         console.log(`Calculated grid bounds: ${maxX}x${maxY}`);
       });
     }
-  }, [currentLayer, loading, loadLayer, placedSprites, setGridBounds]);
+  }, [currentLayer, loading, loadLayer, placedSprites, setGridBounds, layerDimensions]);
 
   useEffect(() => {
     if (!app || !texturesLoaded || Object.keys(textureCache.current).length === 0) {

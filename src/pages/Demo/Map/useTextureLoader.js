@@ -8,6 +8,7 @@ const useTextureLoader = ({
   textureCache,
   setAvailableLayers,
   setCurrentLayer,
+  setLayerDimensions
 }) => {
   const fetchTexturesAndLayers = useCallback(
     async (pixiApp) => {
@@ -49,10 +50,12 @@ const useTextureLoader = ({
 
         const res = await fetch("https://api.metafarmers.io/list/layers");
         const data = await res.json();
-        const layers = (data.layers || []).map((l) => l.layer);
-        setAvailableLayers(layers);
-        if (layers.length > 0) {
-          setCurrentLayer(layers[0]);
+        const fullLayers = data.layers || [];
+        const layerNames = fullLayers.map((l) => l.layer);
+        setAvailableLayers(layerNames);
+        setLayerDimensions(fullLayers);
+        if (layerNames.length > 0) {
+          setCurrentLayer(layerNames[0]);
         }
       } catch (error) {
         console.error("Error loading textures or layers:", error);
@@ -60,7 +63,7 @@ const useTextureLoader = ({
         setTexturesLoaded(false);
       }
     },
-    [setLoading, setLoadingProgress, setTexturesLoaded, textureCache, setAvailableLayers, setCurrentLayer]
+    [setLoading, setLoadingProgress, setTexturesLoaded, textureCache, setAvailableLayers, setCurrentLayer, setLayerDimensions]
   );
 
   return { fetchTexturesAndLayers };

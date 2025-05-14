@@ -18,6 +18,7 @@ const ObjectViewer = () => {
   const placedSprites = useRef([]);
   const [availableLayers, setAvailableLayers] = useState([]);
   const [currentLayer, setCurrentLayer] = useState(null);
+  const [layerDimensions, setLayerDimensions] = useState([]);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
   const [textureCanvases, setTextureCanvases] = useState({});
@@ -31,6 +32,7 @@ const ObjectViewer = () => {
     textureCache,
     setAvailableLayers,
     setCurrentLayer,
+    setLayerDimensions
   });
 
   return (
@@ -70,6 +72,8 @@ const ObjectViewer = () => {
           texturesLoaded={texturesLoaded}
           fetchTexturesAndLayers={fetchTexturesAndLayers}
           setGridBounds={setGridBounds}
+          layerDimensions={layerDimensions}
+          availableLayers={availableLayers}
         />
         <Minimap
           minimapContainer={minimapContainer}
@@ -79,6 +83,7 @@ const ObjectViewer = () => {
           loading={loading}
           currentLayer={currentLayer}
           gridBounds={gridBounds}
+          layerDimensions={layerDimensions}
         />
         {loading && <LoadingIndicator progress={loadingProgress} />}
       </Container>

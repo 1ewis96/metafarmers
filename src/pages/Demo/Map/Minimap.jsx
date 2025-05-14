@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import usePixiApp from "./usePixiApp";
-import { MINIMAP_SIZE, MINIMAP_SCALE, GRID_SIZE, TILE_SIZE } from "./constants";
+import { MINIMAP_SIZE, MINIMAP_SCALE, TILE_SIZE } from "./constants";
 
 const Minimap = ({
   minimapContainer,
@@ -10,6 +10,8 @@ const Minimap = ({
   spriteUpdateCounter,
   loading,
   currentLayer,
+  gridBounds,
+  layerDimensions
 }) => {
   const minimapSprites = useRef([]);
   const app = usePixiApp({
@@ -20,21 +22,29 @@ const Minimap = ({
     backgroundAlpha: 0.8,
   });
 
+  const getCurrentLayerDimensions = () => {
+    const layerData = layerDimensions.find(layer => layer.layer === currentLayer);
+    return layerData ? { width: layerData.width, height: layerData.height } : { width: 30, height: 30 };
+  };
+
   useEffect(() => {
     if (!app) return;
 
     console.log("Minimap app initialized:", app);
 
+    const { width, height } = getCurrentLayerDimensions();
     const gridGraphics = new PIXI.Graphics();
     gridGraphics.beginFill(0xcccccc);
-    gridGraphics.drawRect(0, 0, GRID_SIZE * TILE_SIZE * MINIMAP_SCALE, GRID_SIZE * TILE_SIZE * MINIMAP_SCALE);
+    gridGraphics.drawRect(0, 0, width * TILE_SIZE * MINIMAP_SCALE, height * TILE_SIZE * MINIMAP_SCALE);
     gridGraphics.endFill();
     gridGraphics.lineStyle(1, 0x666666, 1);
-    for (let i = 0; i <= GRID_SIZE; i++) {
+    for (let i = 0; i <= width; i++) {
       gridGraphics.moveTo(i * TILE_SIZE * MINIMAP_SCALE, 0);
-      gridGraphics.lineTo(i * TILE_SIZE * MINIMAP_SCALE, GRID_SIZE * TILE_SIZE * MINIMAP_SCALE);
+      gridGraphics.lineTo(i * TILE_SIZE * MINIMAP_SCALE, height * TILE_SIZE * MINIMAP_SCALE);
+    }
+    for (let i = 0; i <= height; i++) {
       gridGraphics.moveTo(0, i * TILE_SIZE * MINIMAP_SCALE);
-      gridGraphics.lineTo(GRID_SIZE * TILE_SIZE * MINIMAP_SCALE, i * TILE_SIZE * MINIMAP_SCALE);
+      gridGraphics.lineTo(width * TILE_SIZE * MINIMAP_SCALE, i * TILE_SIZE * MINIMAP_SCALE);
     }
     app.stage.addChild(gridGraphics);
 
@@ -57,7 +67,7 @@ const Minimap = ({
     return () => {
       app.stage.off("pointerdown", handleClick);
     };
-  }, [app, mainAppRef]);
+  }, [app, mainAppRef, currentLayer, layerDimensions]);
 
   useEffect(() => {
     if (!app || !mainAppRef.current?.__PIXI_APP__) return;

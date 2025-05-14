@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import * as PIXI from "pixi.js";
-import { TILE_SIZE, GRID_SIZE } from "./constants";
+import { TILE_SIZE } from "./constants";
 import useLayerLoader from "./useLayerLoader";
 
 const useMapInteractions = ({
@@ -21,7 +21,7 @@ const useMapInteractions = ({
   });
 
   useEffect(() => {
-    if (!app) return;
+    if (!app || !pixiContainer.current) return;
 
     const minScale = 0.2;
     const maxScale = 5;
@@ -29,60 +29,6 @@ const useMapInteractions = ({
     let isDragging = false;
     let dragStart = { x: 0, y: 0 };
     let stageStart = { x: 0, y: 0 };
-
-    const handleWheel = (e) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -1 : 1;
-      const zoomFactor = 1 + delta * zoomSpeed;
-      const rect = pixiContainer.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const worldX = (mouseX - app.stage.x) / app.stage.scale.x;
-      const worldY = (mouseY - app.stage.y) / app.stage.scale.y;
-      let newScale = app.stage.scale.x * zoomFactor;
-      newScale = Math.max(minScale, Math.min(maxScale, newScale));
-      app.stage.scale.set(newScale);
-      app.stage.x = mouseX - worldX * newScale;
-      app.stage.y = mouseY - worldY * newScale;
-    };
-
-    const handlePointerDown = (e) => {
-      if (e.target === app.stage) {
-        isDragging = true;
-        dragStart = { x: e.data.global.x, y: e.data.global.y };
-        stageStart = { x: app.stage.x, y: app.stage.y };
-      }
-    };
-
-    const handlePointerMove = (e) => {
-      if (isDragging) {
-        const current = { x: e.data.global.x, y: e.data.global.y };
-        app.stage.x = stageStart.x + (current.x - dragStart.x);
-        app.stage.y = stageStart.y + (current.y - dragStart.y);
-      }
-    };
-
-    const handlePointerUp = () => {
-      isDragging = false;
-    };
-
-    pixiContainer.current.addEventListener("wheel", handleWheel);
-    app.stage.on("pointerdown", handlePointerDown);
-    app.stage.on("pointermove", handlePointerMove);
-    app.stage.on("pointerup", handlePointerUp);
-    app.stage.on("pointerupoutside", handlePointerUp);
-
-    return () => {
-      pixiContainer.current.removeEventListener("wheel", handleWheel);
-      app.stage.off("pointerdown", handlePointerDown);
-      app.stage.off("pointermove", handlePointerMove);
-      app.stage.off("pointerup", handlePointerUp);
-      app.stage.off("pointerupoutside", handlePointerUp);
-    };
-  }, [app, pixiContainer]);
-
-  useEffect(() => {
-    if (!app) return;
 
     const updateHitArea = () => {
       const canvasWidth = app.renderer.width;
@@ -102,19 +48,67 @@ const useMapInteractions = ({
         worldRight - worldLeft,
         worldBottom - worldTop
       );
-      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom });
+      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom }); 
+    };
+    updateHitArea();
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -1 : 1;
+      const zoomFactor = 1 + delta * zoomSpeed;
+      const rect = pixiContainer.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const worldX = (mouseX - app.stage.x) / app.stage.scale.x;
+      const worldY = (mouseY - app.stage.y) / app.stage.scale.y;
+      let newScale = app.stage.scale.x * zoomFactor;
+      newScale = Math.max(minScale, Math.min(maxScale, newScale));
+      app.stage.scale.set(newScale);
+      app.stage.x = mouseX - worldX * newScale;
+      app.stage.y = mouseY - worldY * newScale;
+      updateHitArea();
     };
 
-    updateHitArea();
-    app.stage.on('pointermove', updateHitArea);
+    const handlePointerDown = (e) => {
+      if (e.target === app.stage) {
+        isDragging = true;
+        dragStart = { x: e.data.global.x, y: e.data.global.y };
+        stageStart = { x: app.stage.x, y: app.stage.y };
+      }
+    };
+
+    const handlePointerMove = (e) => {
+      if (isDragging) {
+        const current = { x: e.data.global.x, y: e.data.global.y };
+        app.stage.x = stageStart.x + (current.x - dragStart.x);
+        app.stage.y = stageStart.y + (current.y - dragStart.y);
+      }
+      updateHitArea();
+    };
+
+    const handlePointerUp = () => {
+      isDragging = false;
+    };
+
+    pixiContainer.current.addEventListener("wheel", handleWheel);
+    app.stage.on("pointerdown", handlePointerDown);
+    app.stage.on("pointermove", handlePointerMove);
+    app.stage.on("pointerup", handlePointerUp);
+    app.stage.on("pointerupoutside", handlePointerUp);
 
     return () => {
-      app.stage.off('pointermove', updateHitArea);
+      if (pixiContainer.current) {
+        pixiContainer.current.removeEventListener("wheel", handleWheel);
+      }
+      app.stage.off("pointerdown", handlePointerDown);
+      app.stage.off("pointermove", handlePointerMove);
+      app.stage.off("pointerup", handlePointerUp);
+      app.stage.off("pointerupoutside", handlePointerUp);
     };
-  }, [app]);
+  }, [app, pixiContainer]);
 
   useEffect(() => {
-    if (!app) return;
+    if (!app || !pixiContainer.current) return;
 
     const handlePointerMove = (e) => {
       const mouseX = (e.data.global.x - app.stage.x) / app.stage.scale.x;
@@ -134,14 +128,51 @@ const useMapInteractions = ({
     app.stage.on("pointermove", handlePointerMove);
     pixiContainer.current.addEventListener("mouseleave", () => hoverBorder.current.clear());
 
+    app.stage.interactive = true;
+    app.stage.buttonMode = true;
+
     return () => {
       app.stage.off("pointermove", handlePointerMove);
-      pixiContainer.current.removeEventListener("mouseleave", () => hoverBorder.current.clear());
+      if (pixiContainer.current) {
+        pixiContainer.current.removeEventListener("mouseleave", () => hoverBorder.current.clear());
+      }
     };
-  }, [app, hoverBorder]);
+  }, [app, hoverBorder, pixiContainer]);
 
   useEffect(() => {
-    if (!app) return;
+    if (!app || !pixiContainer.current) return;
+
+    const updateHitArea = () => {
+      const canvasWidth = app.renderer.width;
+      const canvasHeight = app.renderer.height;
+      const stageX = app.stage.x;
+      const stageY = app.stage.y;
+      const scale = app.stage.scale.x;
+
+      const worldLeft = -stageX / scale;
+      const worldTop = -stageY / scale;
+      const worldRight = (canvasWidth - stageX) / scale;
+      const worldBottom = (canvasHeight - stageY) / scale;
+
+      app.stage.hitArea = new PIXI.Rectangle(
+        worldLeft,
+        worldTop,
+        worldRight - worldLeft,
+        worldBottom - worldTop
+      );
+      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom }); 
+    };
+
+    updateHitArea();
+    app.stage.on('pointermove', updateHitArea);
+
+    return () => {
+      app.stage.off('pointermove', updateHitArea);
+    };
+  }, [app]);
+
+  useEffect(() => {
+    if (!app || !pixiContainer.current) return;
 
     const handleClick = (e) => {
       const mouseX = (e.data.global.x - app.stage.x) / app.stage.scale.x;
