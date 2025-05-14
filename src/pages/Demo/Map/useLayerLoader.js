@@ -44,7 +44,7 @@ const useLayerLoader = ({ app, textureCache, placedSprites, setSpriteUpdateCount
       clearSprites();
 
       try {
-        const res = await fetch("https://api.metafarmers.io/layer", {
+        const res = await fetch("https://api.metafarmers.io/objects", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ layer: layerName }),

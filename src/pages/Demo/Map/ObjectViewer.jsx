@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Container } from "react-bootstrap";
 import LayerControls from "./LayerControls";
 import AddObjectPanel from "./AddObjectPanel";
+import AddTilePanel from "./AddTilePanel"; // Added import statement
 import CellInfoPanel from "./CellInfoPanel";
 import MainCanvas from "./MainCanvas";
 import Minimap from "./Minimap";
@@ -20,6 +21,7 @@ const ObjectViewer = () => {
   const [currentLayer, setCurrentLayer] = useState(null);
   const [layerDimensions, setLayerDimensions] = useState([]);
   const [showAddPanel, setShowAddPanel] = useState(false);
+  const [showAddTilePanel, setShowAddTilePanel] = useState(false); // Added state
   const [selectedCell, setSelectedCell] = useState(null);
   const [textureCanvases, setTextureCanvases] = useState({});
   const [spriteUpdateCounter, setSpriteUpdateCounter] = useState(0);
@@ -44,6 +46,8 @@ const ObjectViewer = () => {
           setCurrentLayer={setCurrentLayer}
           showAddPanel={showAddPanel}
           setShowAddPanel={setShowAddPanel}
+          showAddTilePanel={showAddTilePanel}
+          setShowAddTilePanel={setShowAddTilePanel}
         />
         {showAddPanel && (
           <AddObjectPanel
@@ -51,6 +55,7 @@ const ObjectViewer = () => {
             textureCanvases={textureCanvases}
           />
         )}
+        {showAddTilePanel && <AddTilePanel />}
         {selectedCell && (
           <CellInfoPanel
             selectedCell={selectedCell}
@@ -75,18 +80,18 @@ const ObjectViewer = () => {
           layerDimensions={layerDimensions}
           availableLayers={availableLayers}
         />
-        <Minimap
-          minimapContainer={minimapContainer}
-          mainAppRef={pixiContainer}
-          placedSprites={placedSprites}
-          spriteUpdateCounter={spriteUpdateCounter}
-          loading={loading}
-          currentLayer={currentLayer}
-          gridBounds={gridBounds}
-          layerDimensions={layerDimensions}
-        />
         {loading && <LoadingIndicator progress={loadingProgress} />}
       </Container>
+      <Minimap
+        minimapContainer={minimapContainer}
+        mainAppRef={pixiContainer}
+        placedSprites={placedSprites}
+        spriteUpdateCounter={spriteUpdateCounter}
+        loading={loading}
+        currentLayer={currentLayer}
+        gridBounds={gridBounds}
+        layerDimensions={layerDimensions}
+      />
     </>
   );
 };

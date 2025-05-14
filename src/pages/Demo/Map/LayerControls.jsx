@@ -6,6 +6,8 @@ const LayerControls = ({
   setCurrentLayer,
   showAddPanel,
   setShowAddPanel,
+  showAddTilePanel,
+  setShowAddTilePanel,
 }) => {
   return (
     <div
@@ -33,8 +35,11 @@ const LayerControls = ({
           </option>
         ))}
       </select>
-      <button onClick={() => setShowAddPanel(!showAddPanel)}>
+      <button onClick={() => setShowAddPanel(!showAddPanel)} style={{ marginRight: "10px" }}>
         {showAddPanel ? "Close Object Panel" : "Add Object"}
+      </button>
+      <button onClick={() => setShowAddTilePanel(!showAddTilePanel)}>
+        {showAddTilePanel ? "Close Tile Panel" : "Add Tile"}
       </button>
     </div>
   );

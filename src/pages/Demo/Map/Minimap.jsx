@@ -1,160 +1,119 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
-import usePixiApp from "./usePixiApp";
-import { MINIMAP_SIZE, MINIMAP_SCALE, TILE_SIZE } from "./constants";
+
+const MINIMAP_SIZE = 250; // Adjusted size for visibility
 
 const Minimap = ({
   minimapContainer,
   mainAppRef,
-  placedSprites,
-  spriteUpdateCounter,
   loading,
   currentLayer,
-  gridBounds,
-  layerDimensions
+  gridBounds
 }) => {
-  const minimapSprites = useRef([]);
-  const app = usePixiApp({
-    container: minimapContainer,
-    width: MINIMAP_SIZE,
-    height: MINIMAP_SIZE,
-    backgroundColor: 0x333333,
-    backgroundAlpha: 0.8,
-  });
+  const canvasRef = useRef(null);
 
-  const getCurrentLayerDimensions = () => {
-    const layerData = layerDimensions.find(layer => layer.layer === currentLayer);
-    return layerData ? { width: layerData.width, height: layerData.height } : { width: 30, height: 30 };
+  useEffect(() => {
+    if (!minimapContainer.current || loading || !currentLayer) return;
+
+    // Create a canvas element for the minimap
+    const canvas = document.createElement("canvas");
+    canvas.width = MINIMAP_SIZE;
+    canvas.height = MINIMAP_SIZE;
+    minimapContainer.current.innerHTML = "";
+    minimapContainer.current.appendChild(canvas);
+    canvasRef.current = canvas;
+
+    drawMinimap(canvas);
+  }, [currentLayer, loading, gridBounds]);
+
+  useEffect(() => {
+    if (!canvasRef.current || !mainAppRef.current?.__PIXI_APP__) return;
+    const mainApp = mainAppRef.current.__PIXI_APP__;
+    const ticker = new PIXI.Ticker();
+    ticker.add(() => updateViewport(mainApp, canvasRef.current));
+    ticker.start();
+
+    return () => {
+      ticker.stop();
+      ticker.destroy();
+    };
+  }, []);
+
+  const drawMinimap = (canvas) => {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
+
+    // Draw background (transparent black for map area)
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
+
+    // Calculate scale to fit gridBounds into minimap
+    const scale = Math.min(MINIMAP_SIZE / gridBounds.width, MINIMAP_SIZE / gridBounds.height) * 0.9;
+    const mapWidth = gridBounds.width * scale;
+    const mapHeight = gridBounds.height * scale;
+    const offsetX = (MINIMAP_SIZE - mapWidth) / 2;
+    const offsetY = (MINIMAP_SIZE - mapHeight) / 2;
+
+    // Draw map outline
+    ctx.fillStyle = "rgba(200, 200, 200, 0.6)";
+    ctx.fillRect(offsetX, offsetY, mapWidth, mapHeight);
+    ctx.strokeStyle = "#555555";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(offsetX, offsetY, mapWidth, mapHeight);
+
+    console.log("Minimap drawn:", { scale, offsetX, offsetY, mapWidth, mapHeight });
   };
 
-  useEffect(() => {
-    if (!app) return;
+  const updateViewport = (mainApp, canvas) => {
+    if (!canvas || !mainApp) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    console.log("Minimap app initialized:", app);
+    // Redraw base map
+    drawMinimap(canvas);
 
-    const { width, height } = getCurrentLayerDimensions();
-    const gridGraphics = new PIXI.Graphics();
-    gridGraphics.beginFill(0xcccccc);
-    gridGraphics.drawRect(0, 0, width * TILE_SIZE * MINIMAP_SCALE, height * TILE_SIZE * MINIMAP_SCALE);
-    gridGraphics.endFill();
-    gridGraphics.lineStyle(1, 0x666666, 1);
-    for (let i = 0; i <= width; i++) {
-      gridGraphics.moveTo(i * TILE_SIZE * MINIMAP_SCALE, 0);
-      gridGraphics.lineTo(i * TILE_SIZE * MINIMAP_SCALE, height * TILE_SIZE * MINIMAP_SCALE);
-    }
-    for (let i = 0; i <= height; i++) {
-      gridGraphics.moveTo(0, i * TILE_SIZE * MINIMAP_SCALE);
-      gridGraphics.lineTo(width * TILE_SIZE * MINIMAP_SCALE, i * TILE_SIZE * MINIMAP_SCALE);
-    }
-    app.stage.addChild(gridGraphics);
+    // Calculate minimap scale and offsets
+    const scale = Math.min(MINIMAP_SIZE / gridBounds.width, MINIMAP_SIZE / gridBounds.height) * 0.9;
+    const mapWidth = gridBounds.width * scale;
+    const mapHeight = gridBounds.height * scale;
+    const offsetX = (MINIMAP_SIZE - mapWidth) / 2;
+    const offsetY = (MINIMAP_SIZE - mapHeight) / 2;
 
-    const viewportRect = new PIXI.Graphics();
-    viewportRect.name = "viewportRect";
-    app.stage.addChild(viewportRect);
+    // Calculate the visible area in world coordinates
+    const stage = mainApp.stage;
+    const renderer = mainApp.renderer;
+    // Use the actual world dimensions for fullWidth and fullHeight
+    const fullWidth = gridBounds.width * 64; // Assuming each grid unit is 64 pixels
+    const fullHeight = gridBounds.height * 64; // Adjust based on actual grid size
+    const visibleLeft = -stage.x / stage.scale.x;
+    const visibleTop = -stage.y / stage.scale.x;
+    const visibleWidth = renderer.width / stage.scale.x;
+    const visibleHeight = renderer.height / stage.scale.x;
 
-    const handleClick = (e) => {
-      const mainApp = mainAppRef.current?.__PIXI_APP__;
-      if (!mainApp) return;
-      const localPos = e.data.getLocalPosition(app.stage);
-      const worldX = localPos.x / MINIMAP_SCALE;
-      const worldY = localPos.y / MINIMAP_SCALE;
-      mainApp.stage.x = -worldX * mainApp.stage.scale.x + mainApp.renderer.width / 2;
-      mainApp.stage.y = -worldY * mainApp.stage.scale.y + mainApp.renderer.height / 2;
-    };
+    // Calculate viewport dimensions on minimap based on visible area
+    const viewWidth = Math.max(10, Math.min(50, (visibleWidth / fullWidth) * mapWidth)); // Min 10px, Max 50px
+    const viewHeight = Math.max(10, Math.min(50, (visibleHeight / fullHeight) * mapHeight)); // Min 10px, Max 50px
+    const viewX = Math.max(offsetX, Math.min(offsetX + mapWidth - viewWidth, ((visibleLeft + visibleWidth / 2) / fullWidth) * mapWidth + offsetX - viewWidth / 2));
+    const viewY = Math.max(offsetY, Math.min(offsetY + mapHeight - viewHeight, ((visibleTop + visibleHeight / 2) / fullHeight) * mapHeight + offsetY - viewHeight / 2));
 
-    app.stage.on("pointerdown", handleClick);
-
-    return () => {
-      app.stage.off("pointerdown", handleClick);
-    };
-  }, [app, mainAppRef, currentLayer, layerDimensions]);
-
-  useEffect(() => {
-    if (!app || !mainAppRef.current?.__PIXI_APP__) return;
-
-    const mainApp = mainAppRef.current.__PIXI_APP__;
-    const viewportRect = app.stage.getChildByName("viewportRect");
-    if (!viewportRect) return;
-
-    const updateViewport = () => {
-      console.log("Viewport update triggered");
-      viewportRect.clear();
-      const viewWidth = mainApp.renderer.width / mainApp.stage.scale.x;
-      const viewHeight = mainApp.renderer.height / mainApp.stage.scale.y;
-      const viewX = -mainApp.stage.x / mainApp.stage.scale.x;
-      const viewY = -mainApp.stage.y / mainApp.stage.scale.y;
-      const miniViewX = viewX * MINIMAP_SCALE;
-      const miniViewY = viewY * MINIMAP_SCALE;
-      const miniViewWidth = viewWidth * MINIMAP_SCALE;
-      const miniViewHeight = viewHeight * MINIMAP_SCALE;
-      viewportRect.lineStyle(2, 0xff0000, 1);
-      viewportRect.drawRect(miniViewX, miniViewY, miniViewWidth, miniViewHeight);
-    };
-
-    updateViewport();
-    mainApp.ticker.add(updateViewport);
-
-    return () => {
-      mainApp.ticker.remove(updateViewport);
-    };
-  }, [app, mainAppRef]);
-
-  useEffect(() => {
-    if (!app || loading || !currentLayer) return;
-
-    console.log("Updating minimap sprites, placedSprites count:", placedSprites.current.length);
-
-    minimapSprites.current.forEach((sprite) => {
-      app.stage.removeChild(sprite);
-      sprite.destroy();
-    });
-    minimapSprites.current = [];
-
-    placedSprites.current.forEach((sprite) => {
-      if (!sprite.texture || !sprite.texture.valid) {
-        const fallback = new PIXI.Graphics();
-        fallback.beginFill(0xff0000);
-        fallback.drawRect(
-          (sprite.x - sprite.width / 2) * MINIMAP_SCALE,
-          (sprite.y - sprite.height / 2) * MINIMAP_SCALE,
-          sprite.width * MINIMAP_SCALE,
-          sprite.height * MINIMAP_SCALE
-        );
-        fallback.endFill();
-        app.stage.addChildAt(fallback, 1);
-        minimapSprites.current.push(fallback);
-        return;
-      }
-
-      const miniSprite = new PIXI.Sprite(sprite.texture);
-      miniSprite.anchor.set(0.5, 0.5);
-      miniSprite.width = sprite.width * MINIMAP_SCALE;
-      miniSprite.height = sprite.height * MINIMAP_SCALE;
-      miniSprite.x = sprite.x * MINIMAP_SCALE;
-      miniSprite.y = sprite.y * MINIMAP_SCALE;
-      miniSprite.rotation = sprite.rotation;
-      miniSprite.alpha = 1;
-      app.stage.addChildAt(miniSprite, 1);
-      minimapSprites.current.push(miniSprite);
+    console.log('Viewport Info:', {
+      visibleLeft, visibleTop, visibleWidth, visibleHeight,
+      fullWidth, fullHeight,
+      viewX, viewY, viewWidth, viewHeight,
+      stageX: stage.x, stageY: stage.y, scale: stage.scale.x
     });
 
-    console.log("Minimap sprites updated:", minimapSprites.current.length);
-  }, [app, loading, currentLayer, spriteUpdateCounter, placedSprites]);
+    // Draw viewport rectangle
+    ctx.strokeStyle = "#FF0000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(viewX, viewY, viewWidth, viewHeight);
+  };
 
   return (
-    <div
-      ref={minimapContainer}
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        right: "20px",
-        width: `${MINIMAP_SIZE}px`,
-        height: `${MINIMAP_SIZE}px`,
-        border: "2px solid #fff",
-        zIndex: 10,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-      }}
-    />
+    <div ref={minimapContainer} style={{ position: "absolute", bottom: "10px", right: "10px", zIndex: 10 }} />
   );
 };
 
