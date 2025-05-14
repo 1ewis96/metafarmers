@@ -44,6 +44,15 @@ const MainCanvas = ({
     if (!app) return;
 
     const drawGrid = () => {
+      // Clear any existing grid graphics
+      const children = app.stage.children.slice();
+      for (const child of children) {
+        if (child instanceof PIXI.Graphics && child !== hoverBorder.current) {
+          app.stage.removeChild(child);
+          child.destroy();
+        }
+      }
+
       const { width, height } = getCurrentLayerDimensions();
       const gridGraphics = new PIXI.Graphics();
       gridGraphics.beginFill(0xf0f0f0);
@@ -59,8 +68,10 @@ const MainCanvas = ({
         gridGraphics.lineTo(width * TILE_SIZE, i * TILE_SIZE);
       }
       app.stage.addChild(gridGraphics);
-      hoverBorder.current = new PIXI.Graphics();
-      app.stage.addChild(hoverBorder.current);
+      if (!hoverBorder.current) {
+        hoverBorder.current = new PIXI.Graphics();
+        app.stage.addChild(hoverBorder.current);
+      }
 
       // Center the stage
       const gridWidth = width * TILE_SIZE;
