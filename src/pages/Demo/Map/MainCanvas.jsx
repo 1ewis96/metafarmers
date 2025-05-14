@@ -89,6 +89,30 @@ const MainCanvas = ({
   }, [app, loading, currentLayer, layerDimensions]);
 
   useEffect(() => {
+    if (!app || loading) return;
+
+    const centerStage = () => {
+      const { width, height } = getCurrentLayerDimensions();
+      const gridWidth = width * TILE_SIZE;
+      const gridHeight = height * TILE_SIZE;
+      const canvasWidth = app.renderer.width;
+      const canvasHeight = app.renderer.height;
+      
+      // Reset zoom to ensure the full grid is visible if possible
+      const minDimension = Math.min(canvasWidth / gridWidth, canvasHeight / gridHeight);
+      const newScale = Math.min(1, minDimension * 0.9); // Slightly less than full fit to give some margin
+      app.stage.scale.set(newScale);
+      
+      // Center the stage after zoom adjustment
+      app.stage.x = (canvasWidth - gridWidth * newScale) / 2;
+      app.stage.y = (canvasHeight - gridHeight * newScale) / 2;
+      console.log(`Layer load centering at x: ${app.stage.x}, y: ${app.stage.y}, scale: ${newScale}, canvas: ${canvasWidth}x${canvasHeight}`);
+    };
+
+    centerStage();
+  }, [app, currentLayer, loading, layerDimensions]);
+
+  useEffect(() => {
     if (app) {
       fetchTexturesAndLayers(app);
     }
