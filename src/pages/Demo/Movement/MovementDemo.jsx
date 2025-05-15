@@ -35,7 +35,8 @@ const MovementDemo = () => {
     loadingProgress,
     loadingMessage,
     fetchLayers,
-    loadLayer
+    loadLayer,
+    layerDimensions
   } = useMapLayerLoader();
 
   // Fetch character skins - only once
@@ -97,19 +98,35 @@ const MovementDemo = () => {
   // Track if we've already loaded the current layer to prevent infinite reloading
   const loadedLayerRef = useRef(null);
   
+  // Track user-initiated layer changes vs. accidental ones
+  const userChangedLayerRef = useRef(false);
+  const lastLayerChangeTimeRef = useRef(0);
+  
   // Load the selected layer when it changes or when the world container is ready
   useEffect(() => {
     console.log(`[Movement] Layer effect triggered - currentLayer: ${currentLayer}, worldContainer ready: ${!!worldContainerRef.current}, loadedLayer: ${loadedLayerRef.current}`);
     
+    // Prevent accidental layer changes by checking if it was user-initiated
+    // or if enough time has passed since the last change (to prevent rapid changes)
+    const now = Date.now();
+    const timeSinceLastChange = now - lastLayerChangeTimeRef.current;
+    const isValidChange = userChangedLayerRef.current || timeSinceLastChange > 1000;
+    
     // Only load if the layer has changed or hasn't been loaded yet
-    if (currentLayer && worldContainerRef.current && loadedLayerRef.current !== currentLayer) {
+    if (currentLayer && worldContainerRef.current && loadedLayerRef.current !== currentLayer && isValidChange) {
       console.log(`[Movement] Loading layer ${currentLayer} (previous: ${loadedLayerRef.current})`);
       loadedLayerRef.current = currentLayer;
+      lastLayerChangeTimeRef.current = now;
+      userChangedLayerRef.current = false;
       loadLayer(currentLayer, worldContainerRef.current);
+    } else if (!isValidChange && currentLayer !== loadedLayerRef.current) {
+      // Revert to the previously loaded layer if this was an accidental change
+      console.log(`[Movement] Reverting accidental layer change from ${currentLayer} to ${loadedLayerRef.current}`);
+      setCurrentLayer(loadedLayerRef.current);
     } else {
       console.log(`[Movement] Skipping layer load - conditions not met`);
     }
-  }, [currentLayer, loadLayer]);
+  }, [currentLayer, loadLayer, setCurrentLayer]);
 
   const handleCommandSubmit = () => {
     if (command.trim() === '') return;
@@ -148,6 +165,8 @@ const MovementDemo = () => {
         onStateChange={setCharacterState}
         skinId={selectedSkin}
         onWorldContainerReady={handleWorldContainerReady}
+        currentLayer={currentLayer}
+        layerDimensions={layerDimensions}
       />
       
       {/* UI Components as draggable windows */}
@@ -155,6 +174,11 @@ const MovementDemo = () => {
         availableLayers={availableLayers}
         currentLayer={currentLayer}
         setCurrentLayer={setCurrentLayer}
+        onUserChangeLayer={() => {
+          // Mark this as a user-initiated layer change
+          userChangedLayerRef.current = true;
+          console.log('[Movement] User initiated layer change');
+        }}
       />
       
       <SkinSelector

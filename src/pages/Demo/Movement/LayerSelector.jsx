@@ -1,7 +1,7 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer }) => {
+const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer, onUserChangeLayer }) => {
   return (
     <DraggableWindow 
       title="Layer Selector" 
@@ -24,7 +24,11 @@ const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer }) => {
         <select
           id="layer-select"
           value={currentLayer || ''} 
-          onChange={(e) => setCurrentLayer(e.target.value)}
+          onChange={(e) => {
+            // Mark this as a user-initiated layer change
+            if (onUserChangeLayer) onUserChangeLayer();
+            setCurrentLayer(e.target.value);
+          }}
           style={{ 
             width: '100%',
             padding: '6px 8px',

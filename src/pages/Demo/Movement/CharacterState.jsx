@@ -19,12 +19,28 @@ const CharacterState = ({ characterState }) => {
           <table style={{ width: '100%', color: '#ddd', fontSize: '14px' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '4px 0' }}><strong>Position X:</strong></td>
+                <td style={{ padding: '4px 0' }}><strong>Grid Cell X:</strong></td>
                 <td style={{ textAlign: 'right' }}>{characterState.x}</td>
               </tr>
               <tr>
-                <td style={{ padding: '4px 0' }}><strong>Position Y:</strong></td>
+                <td style={{ padding: '4px 0' }}><strong>Grid Cell Y:</strong></td>
                 <td style={{ textAlign: 'right' }}>{characterState.y}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Position in Cell:</strong></td>
+                <td style={{ textAlign: 'right' }}>
+                  {characterState.cellX !== undefined ? 
+                    `${(characterState.cellX * 100).toFixed(1)}%, ${(characterState.cellY * 100).toFixed(1)}%` : 
+                    'N/A'}
+                </td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Pixel X:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.pixelX}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Pixel Y:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.pixelY}</td>
               </tr>
               <tr>
                 <td style={{ padding: '4px 0' }}><strong>Direction:</strong></td>
