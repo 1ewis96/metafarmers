@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Container } from "react-bootstrap";
 import LayerControls from "./LayerControls";
 import AddObjectPanel from "./AddObjectPanel";
@@ -14,6 +14,7 @@ import useTileLayerLoader from "./useTileLayerLoader";
 const ObjectViewer = () => {
   const pixiContainer = useRef(null);
   const minimapContainer = useRef(null);
+  const appRef = useRef(null); // Store reference to the PIXI app
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [texturesLoaded, setTexturesLoaded] = useState(false);
@@ -42,6 +43,24 @@ const ObjectViewer = () => {
     setCurrentLayer,
     setLayerDimensions
   });
+  
+  // Function to handle layer creation
+  const handleLayerCreated = useCallback((layersData) => {
+    if (layersData) {
+      // Directly update layers from the data
+      const layerNames = layersData.map(l => l.layer);
+      setAvailableLayers(layerNames);
+      setLayerDimensions(layersData);
+      
+      // Select the newly created layer (should be the last one)
+      if (layerNames.length > 0) {
+        setCurrentLayer(layerNames[layerNames.length - 1]);
+      }
+    } else {
+      // Fallback to refetching if no data provided
+      fetchTexturesAndLayers(pixiContainer.current?.app);
+    }
+  }, [fetchTexturesAndLayers, setAvailableLayers, setLayerDimensions, setCurrentLayer]);
 
   const { fetchTiles } = useTileLoader({
     setLoading,
@@ -69,6 +88,7 @@ const ObjectViewer = () => {
           setShowAddPanel={setShowAddPanel}
           showAddTilePanel={showAddTilePanel}
           setShowAddTilePanel={setShowAddTilePanel}
+          onLayerCreated={handleLayerCreated}
         />
         {showAddPanel && (
           <AddObjectPanel
