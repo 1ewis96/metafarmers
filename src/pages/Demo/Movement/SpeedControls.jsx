@@ -1,31 +1,66 @@
 import React from 'react';
-import { Card, Form } from 'react-bootstrap';
+import DraggableWindow from './DraggableWindow';
 
 const SpeedControls = ({ speed, setSpeed }) => {
   return (
-    <Card className="bg-dark text-white" style={{ width: '250px' }}>
-      <Card.Header>Speed Controls</Card.Header>
-      <Card.Body>
-        <Form.Label>Walk Speed: {speed.walk}</Form.Label>
-        <Form.Range
-          min={1}
-          max={10}
-          value={speed.walk}
-          onChange={(e) =>
-            setSpeed((prev) => ({ ...prev, walk: parseInt(e.target.value) }))
-          }
-        />
-        <Form.Label className="mt-3">Sprint Speed: {speed.sprint}</Form.Label>
-        <Form.Range
-          min={5}
-          max={15}
-          value={speed.sprint}
-          onChange={(e) =>
-            setSpeed((prev) => ({ ...prev, sprint: parseInt(e.target.value) }))
-          }
-        />
-      </Card.Body>
-    </Card>
+    <DraggableWindow 
+      title="Speed Controls" 
+      initialPosition={{ x: 20, y: 150 }}
+      initialWidth={250}
+      initialHeight={180}
+    >
+      <div>
+        <div style={{ marginBottom: '15px' }}>
+          <label 
+            htmlFor="walk-speed" 
+            style={{ 
+              display: 'block', 
+              marginBottom: '5px', 
+              fontSize: '14px',
+              color: '#ddd'
+            }}
+          >
+            Walk Speed: {speed.walk}
+          </label>
+          <input
+            id="walk-speed"
+            type="range"
+            min={1}
+            max={10}
+            value={speed.walk}
+            onChange={(e) =>
+              setSpeed((prev) => ({ ...prev, walk: parseInt(e.target.value) }))
+            }
+            style={{ width: '100%' }}
+          />
+        </div>
+        
+        <div>
+          <label 
+            htmlFor="sprint-speed" 
+            style={{ 
+              display: 'block', 
+              marginBottom: '5px', 
+              fontSize: '14px',
+              color: '#ddd'
+            }}
+          >
+            Sprint Speed: {speed.sprint}
+          </label>
+          <input
+            id="sprint-speed"
+            type="range"
+            min={5}
+            max={15}
+            value={speed.sprint}
+            onChange={(e) =>
+              setSpeed((prev) => ({ ...prev, sprint: parseInt(e.target.value) }))
+            }
+            style={{ width: '100%' }}
+          />
+        </div>
+      </div>
+    </DraggableWindow>
   );
 };
 

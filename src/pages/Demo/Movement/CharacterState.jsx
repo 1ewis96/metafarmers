@@ -1,25 +1,76 @@
 import React from 'react';
-import { Card, ProgressBar } from 'react-bootstrap';
+import DraggableWindow from './DraggableWindow';
 
 const CharacterState = ({ characterState }) => {
+  // Get movement status
+  const movementStatus = characterState.isSprinting ? 'Sprinting' : characterState.isMoving ? 'Walking' : 'Idle';
+  const statusColor = characterState.isSprinting ? '#ff6b6b' : characterState.isMoving ? '#4dabf7' : '#adb5bd';
+  const progressValue = characterState.isSprinting ? 100 : characterState.isMoving ? 50 : 0;
+  
   return (
-    <Card className="bg-dark text-white" style={{ width: '300px' }}>
-      <Card.Header>Character State</Card.Header>
-      <Card.Body>
-        <ul className="list-unstyled mb-2">
-          <li><strong>X:</strong> {characterState.x}</li>
-          <li><strong>Y:</strong> {characterState.y}</li>
-          <li><strong>Direction:</strong> {characterState.direction}</li>
-          <li><strong>Moving:</strong> {characterState.isMoving ? 'Yes' : 'No'}</li>
-          <li><strong>Sprinting:</strong> {characterState.isSprinting ? 'Yes' : 'No'}</li>
-        </ul>
-        <ProgressBar
-          now={characterState.isSprinting ? 100 : characterState.isMoving ? 50 : 0}
-          variant={characterState.isSprinting ? 'danger' : 'info'}
-          label={characterState.isSprinting ? 'Sprinting' : characterState.isMoving ? 'Walking' : 'Idle'}
-        />
-      </Card.Body>
-    </Card>
+    <DraggableWindow 
+      title="Character State" 
+      initialPosition={{ x: 280, y: 150 }}
+      initialWidth={280}
+      initialHeight={220}
+    >
+      <div>
+        <div style={{ marginBottom: '15px' }}>
+          <table style={{ width: '100%', color: '#ddd', fontSize: '14px' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Position X:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.x}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Position Y:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.y}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Direction:</strong></td>
+                <td style={{ textAlign: 'right', textTransform: 'capitalize' }}>{characterState.direction}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Moving:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.isMoving ? 'Yes' : 'No'}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>Sprinting:</strong></td>
+                <td style={{ textAlign: 'right' }}>{characterState.isSprinting ? 'Yes' : 'No'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ marginBottom: '5px', fontSize: '14px', color: '#ddd' }}>
+            <strong>Status:</strong> {movementStatus}
+          </div>
+          <div style={{ 
+            width: '100%', 
+            height: '20px', 
+            backgroundColor: '#444',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${progressValue}%`,
+              height: '100%',
+              backgroundColor: statusColor,
+              transition: 'width 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}>
+              {movementStatus}
+            </div>
+          </div>
+        </div>
+      </div>
+    </DraggableWindow>
   );
 };
 

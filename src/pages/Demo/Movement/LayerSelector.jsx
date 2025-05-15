@@ -1,17 +1,17 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const SkinSelector = ({ skins, selectedSkin, setSelectedSkin }) => {
+const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer }) => {
   return (
     <DraggableWindow 
-      title="Character Skin" 
-      initialPosition={{ x: 280, y: 20 }}
+      title="Layer Selector" 
+      initialPosition={{ x: 20, y: 20 }}
       initialWidth={250}
       initialHeight={120}
     >
       <div>
         <label 
-          htmlFor="skin-select" 
+          htmlFor="layer-select" 
           style={{ 
             display: 'block', 
             marginBottom: '8px', 
@@ -19,12 +19,12 @@ const SkinSelector = ({ skins, selectedSkin, setSelectedSkin }) => {
             color: '#ddd'
           }}
         >
-          Select Character Skin
+          Select Map Layer
         </label>
         <select
-          id="skin-select"
-          value={selectedSkin}
-          onChange={(e) => setSelectedSkin(e.target.value)}
+          id="layer-select"
+          value={currentLayer || ''} 
+          onChange={(e) => setCurrentLayer(e.target.value)}
           style={{ 
             width: '100%',
             padding: '6px 8px',
@@ -34,15 +34,19 @@ const SkinSelector = ({ skins, selectedSkin, setSelectedSkin }) => {
             borderRadius: '4px'
           }}
         >
-          {skins.map((skin) => (
-            <option key={skin} value={skin}>
-              {skin}
-            </option>
-          ))}
+          {!availableLayers || availableLayers.length === 0 ? (
+            <option value="">No layers available</option>
+          ) : (
+            availableLayers.map((layer) => (
+              <option key={layer} value={layer}>
+                {layer}
+              </option>
+            ))
+          )}
         </select>
       </div>
     </DraggableWindow>
   );
 };
 
-export default SkinSelector;
+export default LayerSelector;
