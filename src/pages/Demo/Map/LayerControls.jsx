@@ -12,22 +12,28 @@ const LayerControls = ({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         top: "10px",
-        left: "20px",
-        zIndex: 20,
+        left: "10px",
+        zIndex: 10,
         display: "flex",
-        alignItems: "center",
-        background: "rgba(255, 255, 255, 0.9)",
+        gap: "10px",
+        background: "rgba(42, 42, 42, 0.8)",
         padding: "10px",
-        borderRadius: "5px",
-        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+        borderRadius: "6px",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
       }}
     >
       <select
         value={currentLayer || ""}
         onChange={(e) => setCurrentLayer(e.target.value)}
-        style={{ marginRight: "10px" }}
+        style={{ 
+          padding: "5px 10px",
+          background: "#444",
+          color: "#fff",
+          border: "1px solid #555",
+          borderRadius: "4px" 
+        }}
       >
         {availableLayers.map((layer) => (
           <option key={layer} value={layer}>
@@ -35,11 +41,33 @@ const LayerControls = ({
           </option>
         ))}
       </select>
-      <button onClick={() => setShowAddPanel(!showAddPanel)} style={{ marginRight: "10px" }}>
-        {showAddPanel ? "Close Object Panel" : "Add Object"}
+      <button
+        onClick={() => setShowAddPanel(!showAddPanel)}
+        style={{ 
+          padding: "5px 10px",
+          background: showAddPanel ? "#555" : "#444",
+          color: "#fff",
+          border: "1px solid #666",
+          borderRadius: "4px",
+          cursor: "pointer",
+          transition: "background 0.2s"
+        }}
+      >
+        {showAddPanel ? "Hide Objects" : "Show Objects"}
       </button>
-      <button onClick={() => setShowAddTilePanel(!showAddTilePanel)}>
-        {showAddTilePanel ? "Close Tile Panel" : "Add Tile"}
+      <button
+        onClick={() => setShowAddTilePanel(!showAddTilePanel)}
+        style={{ 
+          padding: "5px 10px",
+          background: showAddTilePanel ? "#555" : "#444",
+          color: "#fff",
+          border: "1px solid #666",
+          borderRadius: "4px",
+          cursor: "pointer",
+          transition: "background 0.2s"
+        }}
+      >
+        {showAddTilePanel ? "Hide Tiles" : "Show Tiles"}
       </button>
     </div>
   );

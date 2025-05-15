@@ -74,9 +74,16 @@ const ObjectViewer = () => {
           <AddObjectPanel
             textureCache={textureCache.current}
             textureCanvases={textureCanvases}
+            onClose={() => setShowAddPanel(false)}
           />
         )}
-        {showAddTilePanel && <AddTilePanel tileCache={tileCache.current} tileCanvases={tileCanvases} />}
+        {showAddTilePanel && (
+          <AddTilePanel 
+            tileCache={tileCache.current} 
+            tileCanvases={tileCanvases} 
+            onClose={() => setShowAddTilePanel(false)}
+          />
+        )}
         {selectedCell && (
           <CellInfoPanel
             selectedCell={selectedCell}

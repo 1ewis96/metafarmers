@@ -1,4 +1,5 @@
 import React from "react";
+import DraggableWindow from "./DraggableWindow";
 
 const CellInfoPanel = ({
   selectedCell,
@@ -162,66 +163,104 @@ const CellInfoPanel = ({
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: "70px",
-        left: "20px",
-        width: "250px",
-        background: "#fff",
-        border: "1px solid #ccc",
-        padding: "10px",
-        zIndex: 15,
-      }}
+    <DraggableWindow
+      title="Cell Info"
+      initialPosition={{ x: 20, y: 70 }}
+      initialWidth={250}
+      initialHeight={200}
+      zIndex={102}
     >
-      <h5>Cell Info</h5>
-      <p>
-        <strong>Tile:</strong> ({selectedCell.x}, {selectedCell.y})
-      </p>
-      {selectedCell.type === 'object' ? (
-        <>
-          <p>
-            <strong>Type:</strong> Object
-          </p>
-          <p>
-            <strong>Object:</strong> {selectedCell.objectName}
-          </p>
-          <p>
-            <strong>Rotation:</strong> {selectedCell.rotation || 0}°
-          </p>
-          <button onClick={handleEject}>Eject</button>
-          <button
-            onClick={handleRotate}
-            style={{ marginLeft: "10px" }}
-          >
-            Rotate
-          </button>
-        </>
-      ) : selectedCell.type === 'tile' ? (
-        <>
-          <p>
-            <strong>Type:</strong> Tile
-          </p>
-          <p>
-            <strong>Tile:</strong> {selectedCell.tileName}
-          </p>
-          <p>
-            <strong>Rotation:</strong> {selectedCell.rotation || 0}°
-          </p>
-          <button onClick={handleEject}>Eject</button>
-          <button
-            onClick={handleRotate}
-            style={{ marginLeft: "10px" }}
-          >
-            Rotate
-          </button>
-        </>
-      ) : (
-        <p>
-          <em>Empty cell</em>
+      <div>
+        <p style={{ marginBottom: "8px" }}>
+          <strong>Tile:</strong> ({selectedCell.x}, {selectedCell.y})
         </p>
-      )}
-    </div>
+        {selectedCell.type === 'object' ? (
+          <>
+            <p style={{ marginBottom: "8px" }}>
+              <strong>Type:</strong> Object
+            </p>
+            <p style={{ marginBottom: "8px" }}>
+              <strong>Object:</strong> {selectedCell.objectName}
+            </p>
+            <p style={{ marginBottom: "12px" }}>
+              <strong>Rotation:</strong> {selectedCell.rotation || 0}°
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button 
+                onClick={handleEject}
+                style={{
+                  padding: "6px 12px",
+                  background: "#444",
+                  color: "#fff",
+                  border: "1px solid #555",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Eject
+              </button>
+              <button
+                onClick={handleRotate}
+                style={{
+                  padding: "6px 12px",
+                  background: "#444",
+                  color: "#fff",
+                  border: "1px solid #555",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Rotate
+              </button>
+            </div>
+          </>
+        ) : selectedCell.type === 'tile' ? (
+          <>
+            <p style={{ marginBottom: "8px" }}>
+              <strong>Type:</strong> Tile
+            </p>
+            <p style={{ marginBottom: "8px" }}>
+              <strong>Tile:</strong> {selectedCell.tileName}
+            </p>
+            <p style={{ marginBottom: "12px" }}>
+              <strong>Rotation:</strong> {selectedCell.rotation || 0}°
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button 
+                onClick={handleEject}
+                style={{
+                  padding: "6px 12px",
+                  background: "#444",
+                  color: "#fff",
+                  border: "1px solid #555",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Eject
+              </button>
+              <button
+                onClick={handleRotate}
+                style={{
+                  padding: "6px 12px",
+                  background: "#444",
+                  color: "#fff",
+                  border: "1px solid #555",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Rotate
+              </button>
+            </div>
+          </>
+        ) : (
+          <p>
+            <em>Empty cell</em>
+          </p>
+        )}
+      </div>
+    </DraggableWindow>
   );
 };
 
