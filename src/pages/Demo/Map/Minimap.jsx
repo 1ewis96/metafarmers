@@ -1,11 +1,16 @@
 import React, { useRef, useEffect } from "react";
 import * as PIXI from "pixi.js";
+import { TILE_SIZE } from "./constants";
 
-const MINIMAP_SIZE = 250; // Adjusted size for visibility
+const MINIMAP_SIZE = 120; // Size of the minimap
+const MINIMAP_BORDER = 2; // Border width
 
 const Minimap = ({
   minimapContainer,
   mainAppRef,
+  placedSprites,
+  placedTiles,
+  spriteUpdateCounter,
   loading,
   currentLayer,
   gridBounds
@@ -24,7 +29,7 @@ const Minimap = ({
     canvasRef.current = canvas;
 
     drawMinimap(canvas);
-  }, [currentLayer, loading, gridBounds]);
+  }, [currentLayer, loading, gridBounds, spriteUpdateCounter]);
 
   useEffect(() => {
     if (!canvasRef.current || !mainAppRef.current?.__PIXI_APP__) return;
@@ -46,25 +51,108 @@ const Minimap = ({
     // Clear canvas
     ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
 
-    // Draw background (transparent black for map area)
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    // Draw background
+    ctx.fillStyle = "#222222";
     ctx.fillRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
 
-    // Calculate scale to fit gridBounds into minimap
-    const scale = Math.min(MINIMAP_SIZE / gridBounds.width, MINIMAP_SIZE / gridBounds.height) * 0.9;
-    const mapWidth = gridBounds.width * scale;
-    const mapHeight = gridBounds.height * scale;
-    const offsetX = (MINIMAP_SIZE - mapWidth) / 2;
-    const offsetY = (MINIMAP_SIZE - mapHeight) / 2;
-
-    // Draw map outline
-    ctx.fillStyle = "rgba(200, 200, 200, 0.6)";
+    // Always use the full minimap area regardless of grid aspect ratio
+    const mapWidth = MINIMAP_SIZE - (MINIMAP_BORDER * 2);
+    const mapHeight = MINIMAP_SIZE - (MINIMAP_BORDER * 2);
+    const offsetX = MINIMAP_BORDER;
+    const offsetY = MINIMAP_BORDER;
+    
+    // Draw grid background
+    ctx.fillStyle = "#444444";
     ctx.fillRect(offsetX, offsetY, mapWidth, mapHeight);
-    ctx.strokeStyle = "#555555";
+    
+    // Find the actual min and max coordinates of all placed items to determine bounds
+    let minX = 0;
+    let minY = 0;
+    let maxX = gridBounds.width;
+    let maxY = gridBounds.height;
+    
+    // Draw grid background
+    ctx.fillStyle = "#444444";
+    ctx.fillRect(offsetX, offsetY, mapWidth, mapHeight);
+    
+    // Draw grid lines if not too dense
+    if (gridBounds.width <= 50 && gridBounds.height <= 50) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.lineWidth = 0.5;
+      
+      // Vertical grid lines
+      for (let i = 0; i <= gridBounds.width; i++) {
+        const x = offsetX + (i / gridBounds.width) * mapWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, offsetY);
+        ctx.lineTo(x, offsetY + mapHeight);
+        ctx.stroke();
+      }
+      
+      // Horizontal grid lines
+      for (let i = 0; i <= gridBounds.height; i++) {
+        const y = offsetY + (i / gridBounds.height) * mapHeight;
+        ctx.beginPath();
+        ctx.moveTo(offsetX, y);
+        ctx.lineTo(offsetX + mapWidth, y);
+        ctx.stroke();
+      }
+    }
+    
+    // Draw tiles (as small colored squares)
+    if (placedTiles && placedTiles.current) {
+      ctx.fillStyle = "rgba(100, 149, 237, 0.8)"; // Cornflower blue
+      placedTiles.current.forEach(tile => {
+        if (typeof tile.metaTileX === 'number' && typeof tile.metaTileY === 'number') {
+          // Map grid coordinates to minimap coordinates
+          const normalizedX = tile.metaTileX / gridBounds.width;
+          const normalizedY = tile.metaTileY / gridBounds.height;
+          
+          const tileX = offsetX + normalizedX * mapWidth;
+          const tileY = offsetY + normalizedY * mapHeight;
+          
+          const tileSize = Math.max(3, Math.min(mapWidth / gridBounds.width, mapHeight / gridBounds.height));
+          
+          ctx.fillRect(
+            tileX,
+            tileY,
+            tileSize,
+            tileSize
+          );
+        }
+      });
+    }
+    
+    // Draw objects (as small colored squares)
+    if (placedSprites && placedSprites.current) {
+      ctx.fillStyle = "rgba(255, 99, 71, 0.8)"; // Tomato red
+      placedSprites.current.forEach(sprite => {
+        if (typeof sprite.metaTileX === 'number' && typeof sprite.metaTileY === 'number') {
+          // Map grid coordinates to minimap coordinates
+          const normalizedX = sprite.metaTileX / gridBounds.width;
+          const normalizedY = sprite.metaTileY / gridBounds.height;
+          
+          const spriteX = offsetX + normalizedX * mapWidth;
+          const spriteY = offsetY + normalizedY * mapHeight;
+          
+          const spriteSize = Math.max(3, Math.min(mapWidth / gridBounds.width, mapHeight / gridBounds.height));
+          
+          ctx.fillRect(
+            spriteX,
+            spriteY,
+            spriteSize,
+            spriteSize
+          );
+        }
+      });
+    }
+    
+    // Draw border around the grid
+    ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1;
     ctx.strokeRect(offsetX, offsetY, mapWidth, mapHeight);
-
-    console.log("Minimap drawn:", { scale, offsetX, offsetY, mapWidth, mapHeight });
+    
+    return { offsetX, offsetY, mapWidth, mapHeight };
   };
 
   const updateViewport = (mainApp, canvas) => {
@@ -72,48 +160,68 @@ const Minimap = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Redraw base map
+    // Redraw base map and get dimensions
     drawMinimap(canvas);
 
-    // Calculate minimap scale and offsets
-    const scale = Math.min(MINIMAP_SIZE / gridBounds.width, MINIMAP_SIZE / gridBounds.height) * 0.9;
-    const mapWidth = gridBounds.width * scale;
-    const mapHeight = gridBounds.height * scale;
-    const offsetX = (MINIMAP_SIZE - mapWidth) / 2;
-    const offsetY = (MINIMAP_SIZE - mapHeight) / 2;
+    // Get the minimap dimensions
+    const mapWidth = MINIMAP_SIZE - (MINIMAP_BORDER * 2);
+    const mapHeight = MINIMAP_SIZE - (MINIMAP_BORDER * 2);
+    const offsetX = MINIMAP_BORDER;
+    const offsetY = MINIMAP_BORDER;
 
     // Calculate the visible area in world coordinates
     const stage = mainApp.stage;
     const renderer = mainApp.renderer;
-    // Use the actual world dimensions for fullWidth and fullHeight
-    const fullWidth = gridBounds.width * 64; // Assuming each grid unit is 64 pixels
-    const fullHeight = gridBounds.height * 64; // Adjust based on actual grid size
-    const visibleLeft = -stage.x / stage.scale.x;
-    const visibleTop = -stage.y / stage.scale.x;
-    const visibleWidth = renderer.width / stage.scale.x;
-    const visibleHeight = renderer.height / stage.scale.x;
+    
+    // Calculate the actual world dimensions in tiles
+    const fullWidthInTiles = gridBounds.width;
+    const fullHeightInTiles = gridBounds.height;
+    
+    // Calculate visible area in world coordinates (in tiles)
+    const visibleLeftInPixels = Math.max(0, -stage.x / stage.scale.x);
+    const visibleTopInPixels = Math.max(0, -stage.y / stage.scale.y);
+    const visibleLeftInTiles = visibleLeftInPixels / TILE_SIZE;
+    const visibleTopInTiles = visibleTopInPixels / TILE_SIZE;
+    
+    const visibleWidthInPixels = Math.min(fullWidthInTiles * TILE_SIZE - visibleLeftInPixels, renderer.width / stage.scale.x);
+    const visibleHeightInPixels = Math.min(fullHeightInTiles * TILE_SIZE - visibleTopInPixels, renderer.height / stage.scale.y);
+    const visibleWidthInTiles = visibleWidthInPixels / TILE_SIZE;
+    const visibleHeightInTiles = visibleHeightInPixels / TILE_SIZE;
 
-    // Calculate viewport dimensions on minimap based on visible area
-    const viewWidth = Math.max(10, Math.min(50, (visibleWidth / fullWidth) * mapWidth)); // Min 10px, Max 50px
-    const viewHeight = Math.max(10, Math.min(50, (visibleHeight / fullHeight) * mapHeight)); // Min 10px, Max 50px
-    const viewX = Math.max(offsetX, Math.min(offsetX + mapWidth - viewWidth, ((visibleLeft + visibleWidth / 2) / fullWidth) * mapWidth + offsetX - viewWidth / 2));
-    const viewY = Math.max(offsetY, Math.min(offsetY + mapHeight - viewHeight, ((visibleTop + visibleHeight / 2) / fullHeight) * mapHeight + offsetY - viewHeight / 2));
+    // Calculate viewport rectangle on minimap
+    const viewX = offsetX + (visibleLeftInTiles / fullWidthInTiles) * mapWidth;
+    const viewY = offsetY + (visibleTopInTiles / fullHeightInTiles) * mapHeight;
+    const viewWidth = (visibleWidthInTiles / fullWidthInTiles) * mapWidth;
+    const viewHeight = (visibleHeightInTiles / fullHeightInTiles) * mapHeight;
 
-    console.log('Viewport Info:', {
-      visibleLeft, visibleTop, visibleWidth, visibleHeight,
-      fullWidth, fullHeight,
-      viewX, viewY, viewWidth, viewHeight,
-      stageX: stage.x, stageY: stage.y, scale: stage.scale.x
-    });
-
-    // Draw viewport rectangle
-    ctx.strokeStyle = "#FF0000";
+    // Draw viewport rectangle with semi-transparent fill
+    ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.fillRect(viewX, viewY, viewWidth, viewHeight);
+    
+    // Draw viewport border
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
     ctx.lineWidth = 2;
     ctx.strokeRect(viewX, viewY, viewWidth, viewHeight);
   };
 
   return (
-    <div ref={minimapContainer} style={{ position: "absolute", bottom: "10px", right: "10px", zIndex: 10 }} />
+    <div 
+      ref={minimapContainer} 
+      style={{
+        position: "absolute",
+        bottom: "10px",
+        right: "10px",
+        zIndex: 10,
+        width: `${MINIMAP_SIZE}px`,
+        height: `${MINIMAP_SIZE}px`,
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        borderRadius: "3px",
+        overflow: "hidden",
+        boxShadow: "0 0 8px rgba(0, 0, 0, 0.5)",
+        backgroundColor: "#222222",
+        opacity: 0.8
+      }}
+    />
   );
 };
 

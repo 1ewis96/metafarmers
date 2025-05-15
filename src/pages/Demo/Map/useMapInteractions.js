@@ -8,10 +8,13 @@ const useMapInteractions = ({
   pixiContainer,
   hoverBorder,
   placedSprites,
+  placedTiles,
   currentLayer,
   textureCache,
+  tileCache,
   setSelectedCell,
   setSpriteUpdateCounter,
+  placeSingleTile,
 }) => {
   const { placeObjectOnGrid } = useLayerLoader({
     app,
@@ -48,7 +51,7 @@ const useMapInteractions = ({
         worldRight - worldLeft,
         worldBottom - worldTop
       );
-      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom }); 
+
     };
     updateHitArea();
 
@@ -160,7 +163,7 @@ const useMapInteractions = ({
         worldRight - worldLeft,
         worldBottom - worldTop
       );
-      console.log('Updated hitArea:', { left: worldLeft, top: worldTop, right: worldRight, bottom: worldBottom }); 
+
     };
 
     updateHitArea();
@@ -179,21 +182,43 @@ const useMapInteractions = ({
       const mouseY = (e.data.global.y - app.stage.y) / app.stage.scale.y;
       const tileX = Math.floor(mouseX / TILE_SIZE);
       const tileY = Math.floor(mouseY / TILE_SIZE);
+      
+      // Check for objects first (they're on top)
       const foundSprite = placedSprites.current.find((sprite) => {
         const spriteTileX = Math.floor((sprite.x - sprite.width / 2) / TILE_SIZE);
         const spriteTileY = Math.floor((sprite.y - sprite.height / 2) / TILE_SIZE);
         return spriteTileX === tileX && spriteTileY === tileY;
       });
-      setSelectedCell(
-        foundSprite
-          ? {
-              x: tileX,
-              y: tileY,
-              objectName: foundSprite.metaObjectName,
-              rotation: foundSprite.metaRotation,
-            }
-          : { x: tileX, y: tileY, objectName: null }
-      );
+      
+      // If no object found, check for tiles
+      const foundTile = !foundSprite && placedTiles.current.find((tile) => {
+        const tileTileX = Math.floor((tile.x - tile.width / 2) / TILE_SIZE);
+        const tileTileY = Math.floor((tile.y - tile.height / 2) / TILE_SIZE);
+        return tileTileX === tileX && tileTileY === tileY;
+      });
+      
+      if (foundSprite) {
+        // Object found
+        setSelectedCell({
+          x: tileX,
+          y: tileY,
+          type: 'object',
+          objectName: foundSprite.metaObjectName,
+          rotation: foundSprite.metaRotation,
+        });
+      } else if (foundTile) {
+        // Tile found
+        setSelectedCell({
+          x: tileX,
+          y: tileY,
+          type: 'tile',
+          tileName: foundTile.metaTileName,
+          rotation: foundTile.metaRotation,
+        });
+      } else {
+        // Empty cell
+        setSelectedCell({ x: tileX, y: tileY, type: null });
+      }
     };
 
     app.stage.on("pointerdown", handleClick);
@@ -201,7 +226,7 @@ const useMapInteractions = ({
     return () => {
       app.stage.off("pointerdown", handleClick);
     };
-  }, [app, placedSprites, setSelectedCell]);
+  }, [app, placedSprites, placedTiles, setSelectedCell]);
 
   useEffect(() => {
     if (!pixiContainer.current) return;
@@ -215,7 +240,9 @@ const useMapInteractions = ({
     const handleDrop = async (e) => {
       e.preventDefault();
       const objectName = e.dataTransfer.getData("objectName");
-      if (!objectName) return;
+      const tileName = e.dataTransfer.getData("tileName");
+      
+      if (!objectName && !tileName) return;
 
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -225,35 +252,49 @@ const useMapInteractions = ({
       const tileX = Math.floor(worldX / TILE_SIZE);
       const tileY = Math.floor(worldY / TILE_SIZE);
 
-      try {
-        const res = await fetch("https://api.metafarmers.io/layer/object/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            layer: currentLayer,
-            object: objectName,
-            x: tileX,
-            y: tileY,
-            rotation: 0,
-          }),
-        });
+      if (objectName) {
+        // Handle object placement
+        try {
+          const res = await fetch("https://api.metafarmers.io/layer/object/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              layer: currentLayer,
+              object: objectName,
+              x: tileX,
+              y: tileY,
+              rotation: 0,
+            }),
+          });
 
-        const data = await res.json();
-        if (data.message === "success") {
-          const sprite = placeObjectOnGrid(
-            textureCache.current[objectName].texture,
-            tileX,
-            tileY,
-            1,
-            1,
-            objectName,
-            0
-          );
-          placedSprites.current.push(sprite);
-          setSpriteUpdateCounter((prev) => prev + 1);
+          const data = await res.json();
+          if (data.message === "success") {
+            const sprite = placeObjectOnGrid(
+              textureCache.current[objectName].texture,
+              tileX,
+              tileY,
+              1,
+              1,
+              objectName,
+              0
+            );
+            placedSprites.current.push(sprite);
+            setSpriteUpdateCounter((prev) => prev + 1);
+          }
+        } catch (err) {
+          console.error("Error placing object:", err);
         }
-      } catch (err) {
-        console.error("Error placing object:", err);
+      } else if (tileName) {
+        // Handle tile placement
+        try {
+          // Use the placeSingleTile function to place the tile
+          const sprite = await placeSingleTile(app, tileName, tileX, tileY, 0);
+          if (sprite) {
+            console.log(`Placed tile ${tileName} at (${tileX}, ${tileY})`);
+          }
+        } catch (err) {
+          console.error("Error placing tile:", err);
+        }
       }
     };
 

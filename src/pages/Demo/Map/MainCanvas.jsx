@@ -8,14 +8,21 @@ import { TILE_SIZE } from "./constants";
 const MainCanvas = ({
   pixiContainer,
   textureCache,
+  tileCache,
   placedSprites,
+  placedTiles,
   currentLayer,
   setSelectedCell,
-  setTextureCanvases, 
+  setTextureCanvases,
+  setTileCanvases, 
   setSpriteUpdateCounter,
   loading,
   texturesLoaded,
+  tilesLoaded,
   fetchTexturesAndLayers,
+  fetchTiles,
+  loadTileLayer,
+  placeSingleTile,
   setGridBounds,
   layerDimensions
 }) => {
@@ -115,11 +122,18 @@ const MainCanvas = ({
   useEffect(() => {
     if (app) {
       fetchTexturesAndLayers(app);
+      fetchTiles(app);
     }
-  }, [app, fetchTexturesAndLayers]);
+  }, [app, fetchTexturesAndLayers, fetchTiles]);
 
   useEffect(() => {
     if (currentLayer && !loading) {
+      // First load tiles (background layer)
+      if (tilesLoaded && app) {
+        loadTileLayer(app, currentLayer);
+      }
+      
+      // Then load objects (foreground layer)
       loadLayer(currentLayer).then(() => {
         // Log sprite metadata
         console.log(
@@ -159,7 +173,7 @@ const MainCanvas = ({
 
   useEffect(() => {
     if (!app || !texturesLoaded || Object.keys(textureCache.current).length === 0) {
-      console.log("Canvas generation skipped: app, texturesLoaded, or textureCache not ready", {
+      console.log("Object canvas generation skipped: app, texturesLoaded, or textureCache not ready", {
         appExists: !!app,
         texturesLoaded,
         textureCount: Object.keys(textureCache.current).length,
@@ -268,15 +282,130 @@ const MainCanvas = ({
     checkTextures();
   }, [app, texturesLoaded, textureCache, setTextureCanvases]);
 
+  // Generate tile canvases
+  useEffect(() => {
+    if (!app || !tilesLoaded || Object.keys(tileCache.current).length === 0) {
+      console.log("Tile canvas generation skipped: app, tilesLoaded, or tileCache not ready", {
+        appExists: !!app,
+        tilesLoaded,
+        tileCount: Object.keys(tileCache.current).length,
+      });
+      return;
+    }
+
+    console.log("Attempting tile canvas generation, renderer state:", {
+      appExists: !!app,
+      gl: !!app.renderer.gl,
+      contextLost: app.renderer.gl?.isContextLost(),
+    });
+
+    const generateTileCanvases = async () => {
+      const canvases = {};
+      let successCount = 0;
+
+      // Try WebGL-based canvas generation
+      let webglSuccess = false;
+      if (app.renderer.gl && !app.renderer.gl.isContextLost()) {
+        for (const key of Object.keys(tileCache.current)) {
+          const texture = tileCache.current[key].texture;
+          if (!texture || !texture.baseTexture.valid) {
+            console.warn(`Texture for tile ${key} is invalid or not loaded`);
+            continue;
+          }
+          try {
+            const sprite = new PIXI.Sprite(texture);
+            sprite.width = 48;
+            sprite.height = 48;
+            const canvas = app.renderer.extract.canvas(sprite);
+            sprite.destroy();
+            if (canvas) {
+              canvases[key] = canvas;
+              successCount++;
+              webglSuccess = true;
+              console.log(`Generated WebGL canvas for tile ${key}`);
+            } else {
+              console.error(`Failed to generate canvas for tile ${key}: Canvas is null`);
+            }
+          } catch (err) {
+            console.error(`Error generating WebGL canvas for tile ${key}:`, err);
+          }
+        }
+      } else {
+        console.warn("Cannot generate WebGL canvases for tiles: WebGL context is lost or unavailable");
+      }
+
+      // Fallback to HTML5 canvas
+      console.log("Attempting HTML5 canvas fallback for remaining tile textures");
+      for (const key of Object.keys(tileCache.current)) {
+        if (canvases[key]) continue;
+        const texture = tileCache.current[key].texture;
+        if (!texture || !texture.baseTexture.valid) {
+          console.warn(`Texture for tile ${key} is invalid or not loaded`);
+          continue;
+        }
+        try {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = texture.baseTexture.resource.source.src;
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = 48;
+          tempCanvas.height = 48;
+          const ctx = tempCanvas.getContext("2d");
+
+          await new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error(`Failed to load image for tile ${key}`));
+          });
+
+          ctx.drawImage(img, 0, 0, 48, 48);
+          canvases[key] = tempCanvas;
+          successCount++;
+          console.log(`Generated HTML5 canvas for tile ${key}`);
+        } catch (err) {
+          console.error(`Error generating HTML5 canvas for tile ${key}:`, err);
+        }
+      }
+
+      console.log(`Generated ${successCount} canvas previews for ${Object.keys(tileCache.current).length} tile textures`);
+      setTileCanvases(canvases);
+      return successCount > 0;
+    };
+
+    const checkTileTextures = async (attempt = 1, maxAttempts = 10) => {
+      const allValid = Object.values(tileCache.current).every(
+        (entry) => entry.texture.baseTexture.valid
+      );
+      if (!allValid) {
+        console.log(`Waiting for tile textures to load (attempt ${attempt}/${maxAttempts})...`);
+        if (attempt < maxAttempts) {
+          setTimeout(() => checkTileTextures(attempt + 1, maxAttempts), 500);
+        } else {
+          console.error("Failed to generate tile canvases: Textures not loaded after max attempts");
+        }
+        return;
+      }
+
+      if (!(await generateTileCanvases()) && attempt < maxAttempts) {
+        console.log(`Retrying tile canvas generation (attempt ${attempt}/${maxAttempts})...`);
+        setTimeout(() => checkTileTextures(attempt + 1, maxAttempts), 500);
+      }
+    };
+
+    checkTileTextures();
+  }, [app, tilesLoaded, tileCache, setTileCanvases]);
+
   useMapInteractions({
     app,
     pixiContainer,
     hoverBorder,
     placedSprites,
+    placedTiles,
     currentLayer,
     textureCache,
+    tileCache,
     setSelectedCell,
     setSpriteUpdateCounter,
+    placeSingleTile,
   });
 
   return (

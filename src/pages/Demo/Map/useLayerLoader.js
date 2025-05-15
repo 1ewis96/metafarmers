@@ -26,6 +26,7 @@ const useLayerLoader = ({ app, textureCache, placedSprites, setSpriteUpdateCount
       sprite.metaTileY = gridY;
       sprite.metaObjectName = objectName;
       sprite.metaRotation = rotation;
+      sprite.zIndex = 10; // Ensure objects are always on top of tiles
       app.stage.addChild(sprite);
       console.log(
         `Placed sprite: objectName=${objectName}, gridX=${gridX}, gridY=${gridY}, ` +

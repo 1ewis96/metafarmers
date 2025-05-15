@@ -1,6 +1,9 @@
 import React from "react";
 
-const AddTilePanel = () => {
+const AddTilePanel = ({ tileCache, tileCanvases }) => {
+  const hasTiles = tileCache && Object.keys(tileCache).length > 0;
+  const hasCanvases = tileCanvases && Object.keys(tileCanvases).length > 0;
+
   return (
     <div
       style={{
@@ -17,7 +20,42 @@ const AddTilePanel = () => {
       }}
     >
       <h5>Drag Tile</h5>
-      <p>Tile selection will be implemented here.</p>
+      {!hasTiles ? (
+        <p>No tiles loaded</p>
+      ) : !hasCanvases ? (
+        <p>Failed to load tile previews. Drag by name below.</p>
+      ) : (
+        Object.keys(tileCache).map((key) => (
+          <div
+            key={key}
+            draggable
+            onDragStart={(e) => e.dataTransfer.setData("tileName", key)}
+            style={{
+              margin: "8px 0",
+              padding: "6px",
+              background: "#eee",
+              border: "1px solid #aaa",
+              cursor: "grab",
+              textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+          >
+            {tileCanvases[key] ? (
+              <img
+                src={tileCanvases[key].toDataURL()}
+                alt={key}
+                style={{ width: "48px", height: "48px", objectFit: "contain" }}
+              />
+            ) : (
+              <span>Preview unavailable</span>
+            )}
+            <span style={{ marginTop: "4px", fontSize: "12px" }}>{key}</span>
+          </div>
+        ))
+      )}
     </div>
   );
 };
