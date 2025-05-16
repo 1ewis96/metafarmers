@@ -1,7 +1,7 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const CharacterState = ({ characterState }) => {
+const CharacterState = ({ characterState, onClose, windowId }) => {
   // Get movement status
   const movementStatus = characterState.isSprinting ? 'Sprinting' : characterState.isMoving ? 'Walking' : 'Idle';
   const statusColor = characterState.isSprinting ? '#ff6b6b' : characterState.isMoving ? '#4dabf7' : '#adb5bd';
@@ -13,6 +13,8 @@ const CharacterState = ({ characterState }) => {
       initialPosition={{ x: 280, y: 150 }}
       initialWidth={280}
       initialHeight={220}
+      onClose={onClose}
+      windowId={windowId}
     >
       <div>
         <div style={{ marginBottom: '15px' }}>

@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap';
 import PixiCanvas from './PixiCanvas';
 import SkinSelector from './SkinSelector';
 import SpeedControls from './SpeedControls';
 import CharacterState from './CharacterState';
 import LayerSelector from './LayerSelector';
 import LoadingScreen from './LoadingScreen';
+import MenuBar from './MenuBar';
 import useMapLayerLoader from './hooks/useMapLayerLoader';
+import useKeyboardControls from './hooks/useKeyboardControls';
+
+
 
 const MovementDemo = () => {
   const [consoleLines, setConsoleLines] = useState([]);
@@ -23,6 +27,14 @@ const MovementDemo = () => {
   const [speed, setSpeed] = useState({
     walk: 3,
     sprint: 6,
+  });
+  
+  // Window visibility state
+  const [visibleWindows, setVisibleWindows] = useState({
+    layerSelector: true,
+    skinSelector: true,
+    speedControls: true,
+    characterState: true
   });
   
   // Map layer related state
@@ -154,8 +166,25 @@ const MovementDemo = () => {
     }
   };
 
+  // Toggle window visibility
+  const toggleWindow = (windowId) => {
+    setVisibleWindows(prev => ({
+      ...prev,
+      [windowId]: !prev[windowId]
+    }));
+  };
+  
+  // Handle window close
+  const handleWindowClose = (windowId) => {
+    setVisibleWindows(prev => ({
+      ...prev,
+      [windowId]: false
+    }));
+  };
+
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+
       {isLoading && (
         <LoadingScreen progress={loadingProgress} message={loadingMessage} />
       )}
@@ -169,32 +198,54 @@ const MovementDemo = () => {
         layerDimensions={layerDimensions}
       />
       
+      {/* Menu Bar */}
+      <MenuBar 
+        visibleWindows={visibleWindows} 
+        toggleWindow={toggleWindow} 
+      />
+      
       {/* UI Components as draggable windows */}
-      <LayerSelector 
-        availableLayers={availableLayers}
-        currentLayer={currentLayer}
-        setCurrentLayer={setCurrentLayer}
-        onUserChangeLayer={() => {
-          // Mark this as a user-initiated layer change
-          userChangedLayerRef.current = true;
-          console.log('[Movement] User initiated layer change');
-        }}
-      />
+      {visibleWindows.layerSelector && (
+        <LayerSelector 
+          availableLayers={availableLayers}
+          currentLayer={currentLayer}
+          setCurrentLayer={setCurrentLayer}
+          onUserChangeLayer={() => {
+            // Mark this as a user-initiated layer change
+            userChangedLayerRef.current = true;
+            console.log('[Movement] User initiated layer change');
+          }}
+          onClose={handleWindowClose}
+          windowId="layerSelector"
+        />
+      )}
       
-      <SkinSelector
-        skins={skins}
-        selectedSkin={selectedSkin}
-        setSelectedSkin={setSelectedSkin}
-      />
+      {visibleWindows.skinSelector && (
+        <SkinSelector
+          skins={skins}
+          selectedSkin={selectedSkin}
+          setSelectedSkin={setSelectedSkin}
+          onClose={handleWindowClose}
+          windowId="skinSelector"
+        />
+      )}
       
-      <SpeedControls 
-        speed={speed} 
-        setSpeed={setSpeed} 
-      />
+      {visibleWindows.speedControls && (
+        <SpeedControls 
+          speed={speed} 
+          setSpeed={setSpeed} 
+          onClose={handleWindowClose}
+          windowId="speedControls"
+        />
+      )}
       
-      <CharacterState 
-        characterState={characterState} 
-      />
+      {visibleWindows.characterState && (
+        <CharacterState 
+          characterState={characterState} 
+          onClose={handleWindowClose}
+          windowId="characterState"
+        />
+      )}
       
       {/* Current layer indicator */}
       {currentLayer && (

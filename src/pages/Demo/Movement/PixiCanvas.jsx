@@ -20,6 +20,8 @@ const PixiCanvas = ({ walkSpeed = 3, sprintSpeed = 6, onStateChange, skinId, onW
   const { calculateMovement, isFocused } = useKeyboardControls();
   const { updateGridSize, initializeWorldOffset, updateWorldOffset, calculateCharacterState, gridSizeRef } = useGridPosition();
 
+
+
   // Track if we've already initialized the canvas
   const canvasInitializedRef = useRef(false);
 
@@ -71,9 +73,10 @@ const PixiCanvas = ({ walkSpeed = 3, sprintSpeed = 6, onStateChange, skinId, onW
         let elapsed = 0;
 
         animationTicker.current = app.ticker.add((delta) => {
-          if (!isFocused.current) return;
+          if (!isFocused.current) {
+            return;
+          }
 
-          // Calculate movement based on keyboard input
           const { vx, vy, moving, direction, isLocked, isSprinting } = calculateMovement(walkSpeed, sprintSpeed);
 
           // Update character direction if provided
@@ -137,7 +140,11 @@ const PixiCanvas = ({ walkSpeed = 3, sprintSpeed = 6, onStateChange, skinId, onW
     });
   }, [walkSpeed, sprintSpeed, onStateChange, skinId, onWorldContainerReady]);
 
-  return <div ref={pixiContainer} style={{ width: '100vw', height: '100vh' }} />;
+  return <div 
+    ref={pixiContainer} 
+    style={{ width: '100vw', height: '100vh' }} 
+    tabIndex={0} // Make the div focusable
+  />; 
 };
 
 export default PixiCanvas;

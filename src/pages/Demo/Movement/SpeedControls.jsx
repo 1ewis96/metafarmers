@@ -1,13 +1,15 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const SpeedControls = ({ speed, setSpeed }) => {
+const SpeedControls = ({ speed, setSpeed, onClose, windowId }) => {
   return (
     <DraggableWindow 
       title="Speed Controls" 
       initialPosition={{ x: 20, y: 150 }}
       initialWidth={250}
       initialHeight={180}
+      onClose={onClose}
+      windowId={windowId}
     >
       <div>
         <div style={{ marginBottom: '15px' }}>

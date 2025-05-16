@@ -1,13 +1,15 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer, onUserChangeLayer }) => {
+const LayerSelector = ({ availableLayers, currentLayer, setCurrentLayer, onUserChangeLayer, onClose, windowId }) => {
   return (
     <DraggableWindow 
       title="Layer Selector" 
       initialPosition={{ x: 20, y: 20 }}
       initialWidth={250}
       initialHeight={120}
+      onClose={onClose}
+      windowId={windowId}
     >
       <div>
         <label 

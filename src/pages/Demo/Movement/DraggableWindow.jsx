@@ -9,7 +9,8 @@ const DraggableWindow = ({
   minWidth = 200,
   minHeight = 150,
   onClose,
-  zIndex = 100
+  zIndex = 100,
+  windowId
 }) => {
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
@@ -125,7 +126,7 @@ const DraggableWindow = ({
         <div style={{ fontWeight: "bold", fontSize: "14px" }}>{title}</div>
         {onClose && (
           <button
-            onClick={onClose}
+            onClick={() => onClose(windowId)}
             style={{
               background: "none",
               border: "none",
@@ -134,6 +135,7 @@ const DraggableWindow = ({
               cursor: "pointer",
               padding: "0 4px"
             }}
+            aria-label="Close window"
           >
             ×
           </button>

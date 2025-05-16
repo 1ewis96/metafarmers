@@ -1,13 +1,15 @@
 import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
-const SkinSelector = ({ skins, selectedSkin, setSelectedSkin }) => {
+const SkinSelector = ({ skins, selectedSkin, setSelectedSkin, onClose, windowId }) => {
   return (
     <DraggableWindow 
       title="Character Skin" 
       initialPosition={{ x: 280, y: 20 }}
       initialWidth={250}
       initialHeight={120}
+      onClose={onClose}
+      windowId={windowId}
     >
       <div>
         <label 
