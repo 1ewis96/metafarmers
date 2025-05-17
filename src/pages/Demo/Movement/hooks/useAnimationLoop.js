@@ -39,7 +39,9 @@ const useAnimationLoop = ({
   walkSpeed,
   sprintSpeed,
   animationFps = 12, // Animation frames per second, can be adjusted on the fly
-  framesPerDirection = 8 // Default to 8 frames per direction based on API response
+  framesPerDirection = 8, // Default to 8 frames per direction based on API response
+  hasCollision, // Function to check if a position has collision
+  onTeleport // Function to handle teleportation
 }) => {
   const animationTicker = useRef(null);
   const lastGridPosition = useRef({ x: -1, y: -1 });
@@ -64,16 +66,16 @@ const useAnimationLoop = ({
         }
 
         // Scale down delta to prevent super-fast movement
-        const scaledDelta = Math.min(delta, 1.0); // Cap delta at 1.0 to prevent huge jumps
+        const scaledDelta = Math.min(delta, 1.0) * 0.2; // Cap delta and reduce speed by 80%
         
         // Use fixed base speeds and multiply by the speed settings
         // This ensures consistent behavior when adjusting speeds
-        const baseWalkSpeed = 1.0;
-        const baseSprintSpeed = 2.0;
+        const baseWalkSpeed = 0.3; // Adjusted for better speed
+        const baseSprintSpeed = 0.6; // Adjusted for better speed
         
-        // Calculate actual speeds - directly proportional to slider values
-        const actualWalkSpeed = baseWalkSpeed * (walkSpeed / 2.0);
-        const actualSprintSpeed = baseSprintSpeed * (sprintSpeed / 4.0);
+        // Calculate actual speeds with a balanced multiplier
+        const actualWalkSpeed = baseWalkSpeed * (walkSpeed / 3.0);
+        const actualSprintSpeed = baseSprintSpeed * (sprintSpeed / 3.0);
         
         const { vx, vy, moving, direction, isLocked, isSprinting } = 
           calculateMovement(actualWalkSpeed, actualSprintSpeed);
@@ -122,8 +124,61 @@ const useAnimationLoop = ({
           characterRef.current.y = appRef.current.screen.height / 2;
         }
 
-        // Only update world position if not teleporting and world container is valid
-        if (!isTeleporting.current && worldContainerRef.current && worldContainerRef.current.transform) {
+        // Calculate the current grid position before movement
+        const currentState = calculateCharacterState(
+          appRef.current,
+          gridContainerRef.current,
+          lastDirectionRef.current,
+          moving,
+          isLocked,
+          isSprinting
+        );
+        
+        // Calculate the potential new position
+        const potentialOffset = updateWorldOffset(
+          appRef.current, 
+          gridContainerRef.current, 
+          scaledVx, 
+          scaledVy, 
+          moving, 
+          isLocked,
+          true // Just calculate, don't apply
+        );
+        
+        // Calculate what the grid position would be after movement
+        const potentialState = calculateCharacterState(
+          appRef.current,
+          gridContainerRef.current,
+          lastDirectionRef.current,
+          moving,
+          isLocked,
+          isSprinting,
+          potentialOffset
+        );
+        
+        // Check for collision at the potential position
+        let collisionDetected = false;
+        
+        // Only check for collision if we're actually trying to move and the collision function exists
+        if (moving && typeof hasCollision === 'function' && (potentialState.x !== currentState.x || potentialState.y !== currentState.y)) {
+          // Log the potential movement for debugging
+          console.log(`[Movement] Checking collision for move from (${currentState.x}, ${currentState.y}) to (${potentialState.x}, ${potentialState.y})`);
+          
+          // Check for collision at the target position
+          try {
+            collisionDetected = hasCollision(potentialState.x, potentialState.y);
+            
+            if (collisionDetected) {
+              console.log(`[Collision] Blocked movement to (${potentialState.x}, ${potentialState.y})`);
+            }
+          } catch (error) {
+            console.error('[Collision] Error checking for collision:', error);
+            collisionDetected = false; // Default to allowing movement if there's an error
+          }
+        }
+        
+        // Only update world position if not teleporting, not colliding, and world container is valid
+        if (!isTeleporting.current && !collisionDetected && worldContainerRef.current && worldContainerRef.current.transform) {
           // Update world position based on scaled movement
           const updatedOffset = updateWorldOffset(
             appRef.current, 
@@ -157,8 +212,12 @@ const useAnimationLoop = ({
               console.log(`[Position] Moved to new cell: (${state.x}, ${state.y}) from (${lastGridPosition.current.x}, ${lastGridPosition.current.y})`);
               lastGridPosition.current = { x: state.x, y: state.y };
               
-              // Check for step-on interactions
-              handleStepOn(state.x, state.y);
+              // Check for step-on interactions and handle teleport if needed
+              const stepOnResult = handleStepOn(state.x, state.y);
+              if (stepOnResult && stepOnResult.type === 'teleport' && onTeleport) {
+                console.log(`[Teleport] Triggering teleport to ${stepOnResult.layerId} (${stepOnResult.x}, ${stepOnResult.y})`);
+                onTeleport(stepOnResult.x, stepOnResult.y, stepOnResult.layerId);
+              }
             }
           } catch (error) {
             console.error('[Animation] Error updating character state:', error);

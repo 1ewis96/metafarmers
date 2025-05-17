@@ -213,8 +213,7 @@ const TravelWindow = ({
           
           <div className="mt-3 text-center">
             <small className="text-muted">
-              Enter coordinates between 0-123 for both X and Y
-              {includeLayerChange && <><br />Layer will change to {destinationLayer || 'none'}</>}
+              {includeLayerChange && <>Layer will change to {destinationLayer || 'none'}</>}
             </small>
           </div>
         </Form>

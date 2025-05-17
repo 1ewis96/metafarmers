@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import DraggableWindow from "./DraggableWindow";
+import PropertiesModal from "./PropertiesModal";
 
 const CellInfoPanel = ({
   selectedCell,
@@ -9,6 +10,24 @@ const CellInfoPanel = ({
   placedTiles,
   setSpriteUpdateCounter,
 }) => {
+  const [isPropertiesModalOpen, setIsPropertiesModalOpen] = useState(false);
+
+  const handleOpenPropertiesModal = () => {
+    setIsPropertiesModalOpen(true);
+  };
+
+  const handleClosePropertiesModal = () => {
+    setIsPropertiesModalOpen(false);
+  };
+
+  const handleApplyFunction = (functionType, updates) => {
+    // Update the local state if needed
+    console.log("Function applied:", functionType, updates);
+    // You might want to update the sprite appearance or add visual indicators
+    // for objects with functions applied
+    setSpriteUpdateCounter((prev) => prev + 1);
+  };
+
   const handleEject = async () => {
     if (!selectedCell) return;
     
@@ -163,104 +182,129 @@ const CellInfoPanel = ({
   };
 
   return (
-    <DraggableWindow
-      title="Cell Info"
-      initialPosition={{ x: 20, y: 70 }}
-      initialWidth={250}
-      initialHeight={200}
-      zIndex={102}
-    >
-      <div>
-        <p style={{ marginBottom: "8px" }}>
-          <strong>Tile:</strong> ({selectedCell.x}, {selectedCell.y})
-        </p>
-        {selectedCell.type === 'object' ? (
-          <>
-            <p style={{ marginBottom: "8px" }}>
-              <strong>Type:</strong> Object
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-              <strong>Object:</strong> {selectedCell.objectName}
-            </p>
-            <p style={{ marginBottom: "12px" }}>
-              <strong>Rotation:</strong> {selectedCell.rotation || 0}°
-            </p>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button 
-                onClick={handleEject}
-                style={{
-                  padding: "6px 12px",
-                  background: "#444",
-                  color: "#fff",
-                  border: "1px solid #555",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Eject
-              </button>
-              <button
-                onClick={handleRotate}
-                style={{
-                  padding: "6px 12px",
-                  background: "#444",
-                  color: "#fff",
-                  border: "1px solid #555",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Rotate
-              </button>
-            </div>
-          </>
-        ) : selectedCell.type === 'tile' ? (
-          <>
-            <p style={{ marginBottom: "8px" }}>
-              <strong>Type:</strong> Tile
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-              <strong>Tile:</strong> {selectedCell.tileName}
-            </p>
-            <p style={{ marginBottom: "12px" }}>
-              <strong>Rotation:</strong> {selectedCell.rotation || 0}°
-            </p>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button 
-                onClick={handleEject}
-                style={{
-                  padding: "6px 12px",
-                  background: "#444",
-                  color: "#fff",
-                  border: "1px solid #555",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Eject
-              </button>
-              <button
-                onClick={handleRotate}
-                style={{
-                  padding: "6px 12px",
-                  background: "#444",
-                  color: "#fff",
-                  border: "1px solid #555",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Rotate
-              </button>
-            </div>
-          </>
-        ) : (
-          <p>
-            <em>Empty cell</em>
+    <>
+      <DraggableWindow
+        title="Cell Info"
+        initialPosition={{ x: 20, y: 70 }}
+        initialWidth={250}
+        initialHeight={200}
+        zIndex={102}
+      >
+        <div>
+          <p style={{ marginBottom: "8px" }}>
+            <strong>Tile:</strong> ({selectedCell.x}, {selectedCell.y})
           </p>
-        )}
-      </div>
-    </DraggableWindow>
+          {selectedCell.type === 'object' ? (
+            <>
+              <p style={{ marginBottom: "8px" }}>
+                <strong>Type:</strong> Object
+              </p>
+              <p style={{ marginBottom: "8px" }}>
+                <strong>Object:</strong> {selectedCell.objectName}
+              </p>
+              <p style={{ marginBottom: "12px" }}>
+                <strong>Rotation:</strong> {selectedCell.rotation || 0}°
+              </p>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <button 
+                  onClick={handleEject}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Eject
+                </button>
+                <button
+                  onClick={handleRotate}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Rotate
+                </button>
+                <button
+                  onClick={handleOpenPropertiesModal}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Properties
+                </button>
+              </div>
+            </>
+          ) : selectedCell.type === 'tile' ? (
+            <>
+              <p style={{ marginBottom: "8px" }}>
+                <strong>Type:</strong> Tile
+              </p>
+              <p style={{ marginBottom: "8px" }}>
+                <strong>Tile:</strong> {selectedCell.tileName}
+              </p>
+              <p style={{ marginBottom: "12px" }}>
+                <strong>Rotation:</strong> {selectedCell.rotation || 0}°
+              </p>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button 
+                  onClick={handleEject}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Eject
+                </button>
+                <button
+                  onClick={handleRotate}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Rotate
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>
+              <em>Empty cell</em>
+            </p>
+          )}
+        </div>
+      </DraggableWindow>
+
+      {selectedCell.type === 'object' && (
+        <PropertiesModal
+          isOpen={isPropertiesModalOpen}
+          onClose={handleClosePropertiesModal}
+          selectedCell={selectedCell}
+          currentLayer={currentLayer}
+          onApplyFunction={handleApplyFunction}
+        />
+      )}
+    </>
   );
 };
 

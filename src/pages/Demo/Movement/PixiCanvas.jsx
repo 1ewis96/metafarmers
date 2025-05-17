@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 // Import custom hooks and utilities
 import useCharacterLoader from './hooks/useCharacterLoader';
@@ -64,9 +64,15 @@ const PixiCanvas = ({
   // Interactive objects hook
   const { 
     objects, 
-    handleStepOn 
+    handleStepOn,
+    hasCollision,
+    interactWithDoor,
+    doorObjects
   } = useInteractiveObjects({
-    currentLayer
+    currentLayer,
+    worldContainerRef,
+    gridContainerRef,
+    appRef
   });
 
   // Teleport functionality
@@ -95,6 +101,35 @@ const PixiCanvas = ({
     calculateCharacterState
   });
 
+  // Set up keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Space key for debug teleport
+      if (e.code === 'Space') {
+        debugTeleport();
+      }
+      
+      // E key for interacting with doors
+      if (e.code === 'KeyE') {
+        // Get current position
+        const state = calculateCharacterState(
+          appRef.current,
+          gridContainerRef.current,
+          lastDirectionRef.current,
+          false,
+          false,
+          false
+        );
+        
+        // Try to interact with a door at the current position
+        interactWithDoor(state.x, state.y);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [debugTeleport, calculateCharacterState, interactWithDoor]);
+
   // Animation loop
   useAnimationLoop({
     appRef,
@@ -114,7 +149,9 @@ const PixiCanvas = ({
     walkSpeed,
     sprintSpeed,
     animationFps, // Pass the animationFps prop to control animation speed
-    framesPerDirection: 8 // Use 8 frames per direction as specified in the API response
+    framesPerDirection: 8, // Use 8 frames per direction as specified in the API response
+    hasCollision: hasCollision, // Pass the collision detection function
+    onTeleport: teleportToCoordinates // Pass the teleport function
   });
 
   // Set up teleport ref

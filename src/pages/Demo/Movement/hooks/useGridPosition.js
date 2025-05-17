@@ -84,9 +84,10 @@ const useGridPosition = () => {
    * @param {number} vy - Y velocity
    * @param {boolean} moving - Whether the character is moving
    * @param {boolean} isLocked - Whether movement is locked
+   * @param {boolean} calculateOnly - If true, only calculate the potential offset without applying it
    * @returns {Object} Updated world offset
    */
-  const updateWorldOffset = useCallback((app, gridContainer, vx, vy, moving, isLocked) => {
+  const updateWorldOffset = useCallback((app, gridContainer, vx, vy, moving, isLocked, calculateOnly = false) => {
     if (!moving || isLocked) return worldOffsetRef.current;
     
     // Calculate new potential position
@@ -120,7 +121,18 @@ const useGridPosition = () => {
     const isWithinBoundsX = characterGridX >= 0 && characterGridX < gridSizeRef.current.width;
     const isWithinBoundsY = characterGridY >= 0 && characterGridY < gridSizeRef.current.height;
     
-    // Only update position if within bounds
+    // Create a potential offset object
+    const potentialOffset = {
+      x: isWithinBoundsX ? newOffsetX : worldOffsetRef.current.x,
+      y: isWithinBoundsY ? newOffsetY : worldOffsetRef.current.y
+    };
+    
+    // If calculateOnly is true, just return the potential offset without applying it
+    if (calculateOnly) {
+      return potentialOffset;
+    }
+    
+    // Otherwise, update the actual offset
     if (isWithinBoundsX) worldOffsetRef.current.x = newOffsetX;
     if (isWithinBoundsY) worldOffsetRef.current.y = newOffsetY;
     
@@ -135,9 +147,10 @@ const useGridPosition = () => {
    * @param {boolean} moving - Whether the character is moving
    * @param {boolean} isLocked - Whether movement is locked
    * @param {boolean} isSprinting - Whether the character is sprinting
+   * @param {Object} customOffset - Optional custom offset to use instead of worldOffsetRef.current
    * @returns {Object} Character state
    */
-  const calculateCharacterState = useCallback((app, gridContainer, direction, moving, isLocked, isSprinting) => {
+  const calculateCharacterState = useCallback((app, gridContainer, direction, moving, isLocked, isSprinting, customOffset) => {
     try {
       // Validate inputs to prevent null reference errors
       if (!app || !app.screen) {
@@ -163,10 +176,13 @@ const useGridPosition = () => {
         gridOffsetY = gridContainer.y;
       }
       
+      // Use customOffset if provided, otherwise use worldOffsetRef.current
+      const offset = customOffset || worldOffsetRef.current;
+      
       // Calculate the position relative to the grid's top-left corner
       // Adjust for the grid container's actual position
-      const relativeX = app.screen.width / 2 - worldOffsetRef.current.x - gridOffsetX;
-      const relativeY = app.screen.height / 2 - worldOffsetRef.current.y - gridOffsetY;
+      const relativeX = app.screen.width / 2 - offset.x - gridOffsetX;
+      const relativeY = app.screen.height / 2 - offset.y - gridOffsetY;
       
       // Calculate grid cell coordinates (integer values)
       const gridX = Math.floor(relativeX / TILE_SIZE);
