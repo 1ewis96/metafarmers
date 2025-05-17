@@ -138,45 +138,65 @@ const useGridPosition = () => {
    * @returns {Object} Character state
    */
   const calculateCharacterState = useCallback((app, gridContainer, direction, moving, isLocked, isSprinting) => {
-    // Get grid dimensions
-    const gridWidth = gridSizeRef.current.width * TILE_SIZE;
-    const gridHeight = gridSizeRef.current.height * TILE_SIZE;
-    
-    // Get grid container position
-    let gridOffsetX = -(gridWidth / 2); // Default grid position (centered)
-    let gridOffsetY = -(gridHeight / 2);
-    
-    // If we found the grid container, use its actual position
-    if (gridContainer) {
-      gridOffsetX = gridContainer.x;
-      gridOffsetY = gridContainer.y;
+    try {
+      // Validate inputs to prevent null reference errors
+      if (!app || !app.screen) {
+        console.warn('[GridPosition] App or screen is null in calculateCharacterState');
+        return {
+          x: 0, y: 0, pixelX: 0, pixelY: 0, cellX: 0, cellY: 0,
+          direction: direction || 'down',
+          isMoving: false, isSprinting: false, isLocked: true
+        };
+      }
+      
+      // Get grid dimensions
+      const gridWidth = gridSizeRef.current.width * TILE_SIZE;
+      const gridHeight = gridSizeRef.current.height * TILE_SIZE;
+      
+      // Get grid container position
+      let gridOffsetX = -(gridWidth / 2); // Default grid position (centered)
+      let gridOffsetY = -(gridHeight / 2);
+      
+      // If we found the grid container and it has a valid transform, use its actual position
+      if (gridContainer && gridContainer.transform) {
+        gridOffsetX = gridContainer.x;
+        gridOffsetY = gridContainer.y;
+      }
+      
+      // Calculate the position relative to the grid's top-left corner
+      // Adjust for the grid container's actual position
+      const relativeX = app.screen.width / 2 - worldOffsetRef.current.x - gridOffsetX;
+      const relativeY = app.screen.height / 2 - worldOffsetRef.current.y - gridOffsetY;
+      
+      // Calculate grid cell coordinates (integer values)
+      const gridX = Math.floor(relativeX / TILE_SIZE);
+      const gridY = Math.floor(relativeY / TILE_SIZE);
+      
+      // Calculate precise position within the grid cell (0-1 range)
+      const cellX = (relativeX % TILE_SIZE) / TILE_SIZE;
+      const cellY = (relativeY % TILE_SIZE) / TILE_SIZE;
+      
+      return {
+        x: gridX,                // Grid cell X (integer)
+        y: gridY,                // Grid cell Y (integer)
+        pixelX: Math.round(relativeX),  // Pixel position relative to grid
+        pixelY: Math.round(relativeY),  // Pixel position relative to grid
+        cellX: cellX,            // Position within cell (0-1)
+        cellY: cellY,            // Position within cell (0-1)
+        direction: direction,
+        isMoving: moving && !isLocked,
+        isSprinting: isSprinting,
+        isLocked: isLocked,
+      };
+    } catch (error) {
+      console.error('[GridPosition] Error in calculateCharacterState:', error);
+      // Return a safe default state
+      return {
+        x: 0, y: 0, pixelX: 0, pixelY: 0, cellX: 0, cellY: 0,
+        direction: direction || 'down',
+        isMoving: false, isSprinting: false, isLocked: true
+      };
     }
-    
-    // Calculate the position relative to the grid's top-left corner
-    // Adjust for the grid container's actual position
-    const relativeX = app.screen.width / 2 - worldOffsetRef.current.x - gridOffsetX;
-    const relativeY = app.screen.height / 2 - worldOffsetRef.current.y - gridOffsetY;
-    
-    // Calculate grid cell coordinates (integer values)
-    const gridX = Math.floor(relativeX / TILE_SIZE);
-    const gridY = Math.floor(relativeY / TILE_SIZE);
-    
-    // Calculate precise position within the grid cell (0-1 range)
-    const cellX = (relativeX % TILE_SIZE) / TILE_SIZE;
-    const cellY = (relativeY % TILE_SIZE) / TILE_SIZE;
-    
-    return {
-      x: gridX,                // Grid cell X (integer)
-      y: gridY,                // Grid cell Y (integer)
-      pixelX: Math.round(relativeX),  // Pixel position relative to grid
-      pixelY: Math.round(relativeY),  // Pixel position relative to grid
-      cellX: cellX,            // Position within cell (0-1)
-      cellY: cellY,            // Position within cell (0-1)
-      direction: direction,
-      isMoving: moving && !isLocked,
-      isSprinting: isSprinting,
-      isLocked: isLocked,
-    };
   }, []);
   
   return {

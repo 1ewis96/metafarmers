@@ -7,16 +7,18 @@ import CharacterState from './CharacterState';
 import LayerSelector from './LayerSelector';
 import LoadingScreen from './LoadingScreen';
 import MenuBar from './MenuBar';
+import TravelWindow from './TravelWindow';
 import useMapLayerLoader from './hooks/useMapLayerLoader';
 import useKeyboardControls from './hooks/useKeyboardControls';
-
-
 
 const MovementDemo = () => {
   const [consoleLines, setConsoleLines] = useState([]);
   const [command, setCommand] = useState('');
   const [skins, setSkins] = useState([]);
   const [selectedSkin, setSelectedSkin] = useState('');
+  
+  // State for character movement
+  
   const [characterState, setCharacterState] = useState({
     x: 0,
     y: 0,
@@ -24,17 +26,112 @@ const MovementDemo = () => {
     isMoving: false,
     isSprinting: false,
   });
+  
+  // Reference to the teleport function
+  const teleportFunctionRef = useRef(null);
+  
+  // Enhanced teleport function with layer change support
+  const teleportToCoordinates = (x, y, targetLayer = null) => {
+    console.log(`[MovementDemo] Teleport requested to (${x}, ${y})${targetLayer ? ` on layer ${targetLayer}` : ''}`);
+    
+    // If a target layer is specified and it's different from the current layer
+    if (targetLayer && targetLayer !== currentLayer) {
+      console.log(`[MovementDemo] Layer change required before teleport: ${currentLayer} -> ${targetLayer}`);
+      
+      // Store the target coordinates for use after layer change
+      const targetCoordinates = { x, y };
+      
+      // Find the grid dimensions for both layers to properly scale coordinates
+      const currentLayerDim = layerDimensions.find(dim => dim.layer === currentLayer);
+      const targetLayerDim = layerDimensions.find(dim => dim.layer === targetLayer);
+      
+      if (currentLayerDim && targetLayerDim) {
+        // Calculate the grid size ratio between layers
+        const xRatio = targetLayerDim.width / currentLayerDim.width;
+        const yRatio = targetLayerDim.height / currentLayerDim.height;
+        
+        // Only adjust if grid sizes are different
+        if (xRatio !== 1 || yRatio !== 1) {
+          // The coordinates are already adjusted in TravelWindow, but we log them here for clarity
+          console.log(`[MovementDemo] Grid size ratio: ${xRatio}x${yRatio}`);
+          console.log(`[MovementDemo] Using adjusted coordinates: (${x}, ${y})`);
+        }
+      }
+      
+      // Mark as user-initiated to prevent layer loading issues
+      userChangedLayerRef.current = true;
+      
+      // Change the layer first
+      setCurrentLayer(targetLayer);
+      
+      // Create a function to check if the layer is fully loaded before teleporting
+      const attemptTeleport = (attemptsLeft = 10) => {
+        if (attemptsLeft <= 0) {
+          console.error('[MovementDemo] Failed to teleport after maximum attempts');
+          return;
+        }
+        
+        // Check if the teleport function is available and the layer is loaded
+        if (teleportFunctionRef.current && loadedLayer === targetLayer) {
+          console.log(`[MovementDemo] Layer ${targetLayer} is loaded, executing teleport to (${x}, ${y})`);
+          
+          // Make sure the grid size is updated for the new layer
+          const layerDim = layerDimensions.find(dim => dim.layer === targetLayer);
+          if (layerDim && teleportFunctionRef.current.updateGridSize) {
+            // If the teleport function has an updateGridSize method, call it directly
+            console.log(`[MovementDemo] Explicitly updating grid size to ${layerDim.width}x${layerDim.height} before teleport`);
+            teleportFunctionRef.current.updateGridSize(layerDimensions, targetLayer);
+          }
+          
+          // Execute the teleport with a small delay to ensure grid size is applied
+          setTimeout(() => {
+            teleportFunctionRef.current(x, y);
+          }, 100);
+        } else {
+          // Layer not loaded yet or teleport function not available, retry after a delay
+          console.log(`[MovementDemo] Layer ${targetLayer} not ready yet, waiting... (${attemptsLeft} attempts left)`);
+          setTimeout(() => attemptTeleport(attemptsLeft - 1), 300);
+        }
+      };
+      
+      // Start the teleport attempt process
+      setTimeout(() => attemptTeleport(), 500);
+      
+      return true; // Return success since we've started the process
+    }
+    
+    // Standard teleport on current layer
+    if (teleportFunctionRef.current) {
+      return teleportFunctionRef.current(x, y);
+    } else {
+      console.error('[MovementDemo] Teleport function not available yet');
+      return false;
+    }
+  };
+  // Character movement and animation speed settings with consistent controls
   const [speed, setSpeed] = useState({
-    walk: 3,
-    sprint: 6,
+    walk: 2.0,    // Default walking speed (0.5 = very slow, 5 = very fast)
+    sprint: 4.0,  // Default sprinting speed (1 = very slow, 10 = very fast)
+    animationFps: 8  // Animation frames per second (5 = slow animation, 20 = fast animation)
   });
   
-  // Window visibility state
+  // Handle speed changes from the TravelWindow
+  const handleSpeedChange = (newSpeedSettings) => {
+    console.log('[MovementDemo] Updating speed settings:', newSpeedSettings);
+    setSpeed({
+      walk: newSpeedSettings.walkSpeed,
+      sprint: newSpeedSettings.sprintSpeed,
+      animationFps: newSpeedSettings.animationFps
+    });
+  };
+  
+  // Window visibility state - all windows closed by default
   const [visibleWindows, setVisibleWindows] = useState({
-    layerSelector: true,
-    skinSelector: true,
-    speedControls: true,
-    characterState: true
+    layerSelector: false,
+    skinSelector: false,
+    speedControls: false,
+    characterState: false,
+    travelWindow: false
   });
   
   // Map layer related state
@@ -48,7 +145,10 @@ const MovementDemo = () => {
     loadingMessage,
     fetchLayers,
     loadLayer,
-    layerDimensions
+    layerDimensions,
+    loadedLayer,
+    setLoadedLayer,
+    setAvailableLayers
   } = useMapLayerLoader();
 
   // Fetch character skins - only once
@@ -184,7 +284,6 @@ const MovementDemo = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-
       {isLoading && (
         <LoadingScreen progress={loadingProgress} message={loadingMessage} />
       )}
@@ -196,6 +295,7 @@ const MovementDemo = () => {
         onWorldContainerReady={handleWorldContainerReady}
         currentLayer={currentLayer}
         layerDimensions={layerDimensions}
+        teleportRef={teleportFunctionRef}
       />
       
       {/* Menu Bar */}
@@ -247,22 +347,40 @@ const MovementDemo = () => {
         />
       )}
       
+      {visibleWindows.travelWindow && (
+        <TravelWindow
+          onClose={handleWindowClose}
+          windowId="travelWindow"
+          onTeleport={teleportToCoordinates}
+          availableLayers={availableLayers}
+          currentLayer={currentLayer}
+          onLayerChange={setCurrentLayer}
+          layerDimensions={layerDimensions}
+          onUserChangeLayer={() => {
+            // Mark this as a user-initiated layer change
+            userChangedLayerRef.current = true;
+            console.log('[Movement] User initiated layer change via Travel Window');
+          }}
+        />
+      )}
+      
       {/* Current layer indicator */}
       {currentLayer && (
         <div style={{
           position: 'absolute',
           bottom: '10px',
           left: '10px',
-          padding: '8px 12px',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          color: '#fff',
+          padding: '5px 10px',
+          background: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
           borderRadius: '4px',
-          fontSize: '14px',
-          zIndex: 5
+          fontSize: '12px'
         }}>
-          Current layer: <strong>{currentLayer}</strong>
+          Layer: {currentLayer}
         </div>
       )}
+      
+      {/* Layer indicator is the only element at the bottom now */}
     </div>
   );
 };

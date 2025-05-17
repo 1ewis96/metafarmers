@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLayerGroup, faPerson, faGaugeHigh, faInfo } from '@fortawesome/free-solid-svg-icons';
+import { faLayerGroup, faPerson, faGaugeHigh, faInfo, faLocationArrow } from '@fortawesome/free-solid-svg-icons';
 
 const MenuBar = ({ visibleWindows, toggleWindow }) => {
   return (
@@ -39,6 +39,12 @@ const MenuBar = ({ visibleWindows, toggleWindow }) => {
         label="Character State"
         isActive={visibleWindows.characterState}
         onClick={() => toggleWindow('characterState')}
+      />
+      <IconButton 
+        icon={faLocationArrow} 
+        label="Travel"
+        isActive={visibleWindows.travelWindow}
+        onClick={() => toggleWindow('travelWindow')}
       />
     </div>
   );
