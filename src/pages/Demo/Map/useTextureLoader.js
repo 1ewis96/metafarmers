@@ -45,7 +45,7 @@ const useTextureLoader = ({
         }
 
         console.log("Texture cache populated:", Object.keys(textureCache.current));
-        setLoading(false);
+        // Don't set loading to false yet, we need to wait for all resources to be loaded
         setTexturesLoaded(true);
 
         const res = await fetch("https://api.metafarmers.io/list/layers");

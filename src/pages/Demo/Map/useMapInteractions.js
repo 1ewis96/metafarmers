@@ -114,22 +114,51 @@ const useMapInteractions = ({
     if (!app || !pixiContainer.current) return;
 
     const handlePointerMove = (e) => {
-      const mouseX = (e.data.global.x - app.stage.x) / app.stage.scale.x;
-      const mouseY = (e.data.global.y - app.stage.y) / app.stage.scale.y;
-      const tileX = Math.floor(mouseX / TILE_SIZE);
-      const tileY = Math.floor(mouseY / TILE_SIZE);
-      hoverBorder.current.clear();
-      hoverBorder.current.lineStyle(3, 0xffff00, 1);
-      hoverBorder.current.drawRect(
-        tileX * TILE_SIZE - 1,
-        tileY * TILE_SIZE - 1,
-        TILE_SIZE + 2,
-        TILE_SIZE + 2
-      );
+      // Skip if app or stage is not available
+      if (!app || !app.stage) return;
+      
+      // Skip if hoverBorder is not properly initialized
+      if (!hoverBorder.current || !hoverBorder.current.geometry) {
+        // Recreate the graphics object if it's missing or invalid
+        hoverBorder.current = new PIXI.Graphics();
+        app.stage.addChild(hoverBorder.current);
+      }
+      
+      try {
+        const mouseX = (e.data.global.x - app.stage.x) / app.stage.scale.x;
+        const mouseY = (e.data.global.y - app.stage.y) / app.stage.scale.y;
+        const tileX = Math.floor(mouseX / TILE_SIZE);
+        const tileY = Math.floor(mouseY / TILE_SIZE);
+        
+        // Safely clear and redraw the hover border
+        if (hoverBorder.current && hoverBorder.current.clear) {
+          hoverBorder.current.clear();
+          hoverBorder.current.lineStyle(3, 0xffff00, 1);
+          hoverBorder.current.drawRect(
+            tileX * TILE_SIZE - 1,
+            tileY * TILE_SIZE - 1,
+            TILE_SIZE + 2,
+            TILE_SIZE + 2
+          );
+        }
+      } catch (err) {
+        console.error('Error in handlePointerMove:', err);
+      }
     };
 
+    // Safe mouseleave handler that checks if hoverBorder is valid before clearing
+    const handleMouseLeave = () => {
+      if (hoverBorder.current && hoverBorder.current.clear) {
+        try {
+          hoverBorder.current.clear();
+        } catch (err) {
+          console.error('Error clearing hover border:', err);
+        }
+      }
+    };
+    
     app.stage.on("pointermove", handlePointerMove);
-    pixiContainer.current.addEventListener("mouseleave", () => hoverBorder.current.clear());
+    pixiContainer.current.addEventListener("mouseleave", handleMouseLeave);
 
     app.stage.interactive = true;
     app.stage.buttonMode = true;
@@ -137,7 +166,7 @@ const useMapInteractions = ({
     return () => {
       app.stage.off("pointermove", handlePointerMove);
       if (pixiContainer.current) {
-        pixiContainer.current.removeEventListener("mouseleave", () => hoverBorder.current.clear());
+        pixiContainer.current.removeEventListener("mouseleave", handleMouseLeave);
       }
     };
   }, [app, hoverBorder, pixiContainer]);

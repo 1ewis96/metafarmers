@@ -190,18 +190,57 @@ const useTeleport = ({
   }, [calculateCharacterState, onStateChange]);
   
   // Debug teleport - for direct testing
-  const debugTeleport = useCallback((x, y) => {
-    console.log(`[Debug] Teleporting to exact grid position (${x}, ${y})`);
+  const debugTeleport = useCallback(() => {
+    console.log(`[Debug] Executing debug teleport`);
     
-    if (worldContainerRef.current && appRef.current) {
-      // Calculate the new world position
-      const newWorldX = -(x * TILE_SIZE) + (appRef.current.screen.width / 2);
-      const newWorldY = -(y * TILE_SIZE) + (appRef.current.screen.height / 2);
-      
-      // Update world position
-      worldContainerRef.current.position.set(newWorldX, newWorldY);
+    // Default to teleporting 5 cells in the current direction
+    const direction = lastDirectionRef.current || 'right';
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    // Determine offset based on direction
+    switch (direction) {
+      case 'up':
+        offsetY = -5;
+        break;
+      case 'down':
+        offsetY = 5;
+        break;
+      case 'left':
+        offsetX = -5;
+        break;
+      case 'right':
+        offsetX = 5;
+        break;
     }
-  }, []);
+    
+    // Get current position
+    if (appRef.current && gridContainerRef.current) {
+      try {
+        const currentState = calculateCharacterState(
+          appRef.current,
+          gridContainerRef.current,
+          direction,
+          false,
+          false,
+          false
+        );
+        
+        // Calculate target position
+        const targetX = currentState.x + offsetX;
+        const targetY = currentState.y + offsetY;
+        
+        console.log(`[Debug] Teleporting from (${currentState.x}, ${currentState.y}) to (${targetX}, ${targetY})`);
+        
+        // Use the main teleport function
+        return teleportToCoordinates(targetX, targetY);
+      } catch (error) {
+        console.error('[Debug] Error during debug teleport:', error);
+      }
+    }
+    
+    return false;
+  }, [calculateCharacterState, lastDirectionRef, teleportToCoordinates]);
 
   return {
     teleportToCoordinates,

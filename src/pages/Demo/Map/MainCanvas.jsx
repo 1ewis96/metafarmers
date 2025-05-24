@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import * as PIXI from "pixi.js";
 import usePixiApp from "./usePixiApp";
 import useMapInteractions from "./useMapInteractions";
@@ -24,7 +24,11 @@ const MainCanvas = ({
   loadTileLayer,
   placeSingleTile,
   setGridBounds,
-  layerDimensions
+  layerDimensions,
+  setObjectPropertiesCache,
+  setAssetsPlaced,
+  setLoadingMessage,
+  setLoading
 }) => {
   const hoverBorder = useRef(null);
   const app = usePixiApp({
@@ -126,15 +130,127 @@ const MainCanvas = ({
     }
   }, [app, fetchTexturesAndLayers, fetchTiles]);
 
+  // Track the last layer we fetched properties for to avoid duplicate calls
+  const lastFetchedLayer = useRef(null);
+  
+  // Cache object properties when loading a layer
+  const fetchAndCacheObjectProperties = useCallback(async (layerName) => {
+    // Skip if we've already fetched properties for this layer
+    if (lastFetchedLayer.current === layerName) {
+      console.log(`Skipping duplicate property fetch for layer: ${layerName}`);
+      return [];
+    }
+    
+    lastFetchedLayer.current = layerName;
+    
+    try {
+      const res = await fetch("https://api.metafarmers.io/objects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layer: layerName }),
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      const items = data.data || [];
+      
+      // Create a cache of object properties indexed by a composite key
+      const propertiesCache = {};
+      
+      items.forEach(item => {
+        const compositeKey = `${item.object}#${item.x}#${item.y}`;
+        propertiesCache[compositeKey] = item;
+      });
+      
+      // Store the cache
+      setObjectPropertiesCache(propertiesCache);
+      console.log("Object properties cached for layer:", layerName);
+      
+      return items;
+    } catch (err) {
+      if (!handleNetworkError(err, "Error fetching object properties")) {
+        // If error wasn't fully handled (not too many retries yet), return empty array
+        return [];
+      }
+      // If error was handled (too many retries), force reset loading state
+      resetLoadingState();
+      return [];
+    }
+  }, [setObjectPropertiesCache]);
+
+  // Track if we're currently loading a layer to prevent duplicate loads
+  const isLoadingLayer = useRef(false);
+  // Track loading attempts to prevent infinite retries
+  const loadingAttempts = useRef(0);
+  // Track if the layer has been successfully loaded to prevent reloading
+  const layerLoadedSuccessfully = useRef(false);
+  // Track if tile layer has been loaded to prevent reloading
+  const tileLayerLoaded = useRef(false);
+  // Track the previous layer to detect changes
+  const previousLayer = useRef(null);
+  
+  // Function to reset loading state in case of errors
+  const resetLoadingState = () => {
+    isLoadingLayer.current = false;
+    loadingAttempts.current = 0;
+    layerLoadedSuccessfully.current = false;
+    tileLayerLoaded.current = false;
+    setLoading(false);
+  };
+  
+  // Function to handle network errors
+  const handleNetworkError = (err, errorType) => {
+    console.error(`${errorType}:`, err);
+    setLoadingMessage(`Error: ${errorType}. Retrying...`);
+    
+    // Increment attempt counter
+    loadingAttempts.current += 1;
+    
+    // If we've tried too many times, give up
+    if (loadingAttempts.current >= 3) {
+      setLoadingMessage(`Failed to load after multiple attempts. Please refresh the page.`);
+      setTimeout(() => {
+        resetLoadingState();
+      }, 3000);
+      return true; // Error was handled
+    }
+    return false; // Continue with retries
+  };
+  
+  // Layer loading process
   useEffect(() => {
-    if (currentLayer && !loading) {
-      // First load tiles (background layer)
-      if (tilesLoaded && app) {
-        loadTileLayer(app, currentLayer);
+    const loadLayerData = async () => {
+      // Skip if no layer selected or already loading
+      if (!currentLayer || isLoadingLayer.current) return;
+      
+      // If we've switched layers, we need to reload even if previously loaded
+      if (previousLayer.current !== currentLayer) {
+        layerLoadedSuccessfully.current = false;
       }
       
-      // Then load objects (foreground layer)
-      loadLayer(currentLayer).then(() => {
+      // Skip if already successfully loaded the current layer
+      if (layerLoadedSuccessfully.current) return;
+      
+      try {
+        console.log(`Starting to load layer: ${currentLayer}`);
+        isLoadingLayer.current = true;
+        loadingAttempts.current = 0;
+        setLoading(true);
+        setLoadingMessage(`Loading layer: ${currentLayer}...`);
+        
+        // Clear any existing objects first
+        placedSprites.current = [];
+        
+        // Then load objects (foreground layer) and cache their properties
+        setLoadingMessage(`Fetching object properties for ${currentLayer}...`);
+        const items = await fetchAndCacheObjectProperties(currentLayer);
+        
+        setLoadingMessage(`Placing ${items.length} objects on grid for ${currentLayer}...`);
+        await loadLayer(currentLayer);
+        
         // Log sprite metadata
         console.log(
           "Placed sprites metadata:",
@@ -167,9 +283,217 @@ const MainCanvas = ({
         maxY = maxY > 0 ? Math.min(maxY, height) : height;
         setGridBounds({ width: maxX, height: maxY });
         console.log(`Calculated grid bounds: ${maxX}x${maxY}`);
-      });
+        
+        // Wait for tile layer to be fully loaded before completing
+        setLoadingMessage(`Finalizing map rendering for ${currentLayer}... (${placedSprites.current.length} objects placed)`);
+        
+        // Use a single setTimeout to give the browser time to render everything
+        setTimeout(() => {
+          // Set assets as placed
+          setAssetsPlaced(true);
+          // Mark layer as successfully loaded
+          layerLoadedSuccessfully.current = true;
+          // Reset loading flag when complete
+          isLoadingLayer.current = false;
+          // Show success message and hide loading indicator
+          setLoadingMessage(`Map loaded successfully! (${placedSprites.current.length} objects, ${placedTiles.current.length} tiles)`);
+          // Force loading state to false to ensure loading indicator disappears
+          setLoading(false);
+          console.log(`Layer ${currentLayer} loaded successfully!`);
+          
+          // Add an extra check to ensure loading indicator is hidden after a short delay
+          setTimeout(() => {
+            if (layerLoadedSuccessfully.current) {
+              setLoading(false);
+            }
+          }, 500);
+        }, 1000); // Give a second for everything to render
+      } catch (error) {
+        console.error('Error in layer loading process:', error);
+        if (!handleNetworkError(error, "Error loading map data")) {
+          // If not too many retries, just reset the loading flags
+          isLoadingLayer.current = false;
+        } else {
+          // If too many retries, fully reset loading state
+          resetLoadingState();
+        }
+      }
+    };
+    
+    loadLayerData();
+  }, [currentLayer, app, tilesLoaded, previousLayer]);
+  
+  // Handle layer changes and reset state appropriately
+  useEffect(() => {
+    // If the layer has changed (not just initial load)
+    if (previousLayer.current !== null && previousLayer.current !== currentLayer) {
+      console.log(`Layer changed from ${previousLayer.current} to ${currentLayer}, resetting loading state`);
+      
+      // Force a complete reload by resetting all loading flags
+      isLoadingLayer.current = false;
+      layerLoadedSuccessfully.current = false;
+      tileLayerLoaded.current = false;
+      loadingAttempts.current = 0;
+      
+      // Reset placed sprites and tiles arrays
+      placedSprites.current = [];
+      placedTiles.current = [];
+      
+      // Clear the stage for the new layer
+      if (app && app.stage) {
+        console.log(`Clearing stage for layer switch from ${previousLayer.current} to ${currentLayer}`);
+        
+        // Remove all existing sprites and graphics
+        while(app.stage.children.length > 0) { 
+          const child = app.stage.getChildAt(0);
+          app.stage.removeChild(child);
+          if (child.destroy) {
+            child.destroy({ children: true });
+          }
+        }
+        
+        // Reset the stage properties
+        app.stage.sortableChildren = true;
+        
+        // Force a renderer update and ensure stage is properly set up
+        if (app.renderer) {
+          // Make sure the stage has sortableChildren enabled
+          app.stage.sortableChildren = true;
+          
+          // Force a render to ensure changes are visible
+          app.renderer.render(app.stage);
+          
+          // Add a small delay and render again to ensure everything is visible
+          setTimeout(() => {
+            if (app && app.renderer) {
+              app.renderer.render(app.stage);
+            }
+          }, 50);
+        }
+        
+        console.log(`Stage cleared successfully for new layer ${currentLayer}`);
+        
+        // Force loading to true to show the loading indicator
+        setLoading(true);
+        setLoadingMessage(`Switching to layer: ${currentLayer}...`);
+        
+        // Force loading to start again for the new layer
+        setTimeout(() => {
+          console.log(`Triggering immediate load of layer ${currentLayer} after switch`);
+          // Reset loading flags to force the layer loading effect to run again
+          layerLoadedSuccessfully.current = false;
+          tileLayerLoaded.current = false;
+          isLoadingLayer.current = false;
+          
+          // Force a re-render of the app stage
+          if (app && app.renderer && app.stage) {
+            console.log('Forcing renderer update after layer switch');
+            app.renderer.render(app.stage);
+            
+            // Add a second render after a short delay
+            setTimeout(() => {
+              if (app && app.renderer && app.stage) {
+                console.log('Forcing second renderer update after layer switch');
+                app.renderer.render(app.stage);
+              }
+            }, 200);
+          }
+        }, 100);
+      }
+    } else if (!currentLayer && isLoadingLayer.current) {
+      // Reset loading flag if no layer is selected
+      console.log('No layer selected, resetting loading state');
+      isLoadingLayer.current = false;
+      layerLoadedSuccessfully.current = false;
+      tileLayerLoaded.current = false;
+      setLoading(false);
     }
-  }, [currentLayer, loading, loadLayer, placedSprites, setGridBounds, layerDimensions]);
+    
+    // Update the previous layer reference
+    previousLayer.current = currentLayer;
+  }, [currentLayer, app]);
+  
+  // Add a separate effect to reload tile layer when tile canvases are ready
+  useEffect(() => {
+    // Skip if no layer selected or already loading
+    if (!currentLayer || isLoadingLayer.current) return;
+    
+    // Force tile layer to be reloaded when switching layers
+    if (previousLayer.current !== currentLayer) {
+      console.log(`Layer changed, forcing tile layer reload for ${currentLayer}`);
+      tileLayerLoaded.current = false;
+    }
+    
+    // Skip if tile layer is already loaded for the current layer
+    if (tileLayerLoaded.current) {
+      console.log(`Tile layer already loaded for ${currentLayer}, skipping reload`);
+      return;
+    }
+    
+    console.log(`Attempting to load tile layer for ${currentLayer}`);
+    
+    // Always attempt to load the tile layer when we have the app
+    if (app && app.stage) {
+      // Check if we have generated canvases for the tiles
+      let tileCanvasesGenerated = true;
+      
+      // Check each tile texture
+      for (const entry of Object.values(tileCache.current)) {
+        if (!entry.texture || !entry.texture.baseTexture || !entry.texture.baseTexture.valid) {
+          tileCanvasesGenerated = false;
+          console.log('Some tile textures are not ready yet, waiting...');
+          break;
+        }
+      }
+      
+      if (tileCanvasesGenerated) {
+        console.log(`Tile canvases are ready, loading tile layer for ${currentLayer}`);
+        setLoadingMessage(`Rendering tile layer for ${currentLayer}...`);
+        
+        try {
+          // Ensure the stage is ready for new tiles
+          if (app && app.stage) {
+            app.stage.sortableChildren = true;
+            
+            // Force a renderer update before loading tiles
+            if (app.renderer) {
+              app.renderer.render(app.stage);
+            }
+          }
+          
+          // Clear any existing tiles first
+          placedTiles.current = [];
+          
+          // Add a small delay to ensure the stage is ready
+          setTimeout(() => {
+            // Load the tile layer
+            loadTileLayer(app, currentLayer);
+            
+            // Force another render after loading tiles
+            if (app && app.renderer) {
+              app.renderer.render(app.stage);
+            }
+            
+            tileLayerLoaded.current = true;
+            console.log(`Tile layer for ${currentLayer} loaded successfully`);
+          }, 100);
+          
+          
+          // Ensure loading state is updated properly
+          if (layerLoadedSuccessfully.current) {
+            // If the main layer loading is already complete, make sure loading indicator is hidden
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Error loading tile layer:', error);
+          // Try again later
+          tileLayerLoaded.current = false;
+        }
+      }
+    }
+  }, [currentLayer, tilesLoaded, app, tileCache]);
 
   useEffect(() => {
     if (!app || !texturesLoaded || Object.keys(textureCache.current).length === 0) {
@@ -180,6 +504,11 @@ const MainCanvas = ({
       });
       return;
     }
+    
+    // Update loading message
+    setLoadingMessage(`Generating previews for ${Object.keys(textureCache.current).length} objects...`);
+    // Force loading state to be true
+    setLoading(true);
 
     console.log("Attempting canvas generation, renderer state:", {
       appExists: !!app,
@@ -259,7 +588,7 @@ const MainCanvas = ({
       return successCount > 0;
     };
 
-    const checkTextures = async (attempt = 1, maxAttempts = 10) => {
+    const checkTextures = async (attempt = 1, maxAttempts = 5) => {
       const allValid = Object.values(textureCache.current).every(
         (entry) => entry.texture.baseTexture.valid
       );
@@ -269,18 +598,18 @@ const MainCanvas = ({
           setTimeout(() => checkTextures(attempt + 1, maxAttempts), 500);
         } else {
           console.error("Failed to generate canvases: Textures not loaded after max attempts");
+          // Proceed anyway to avoid getting stuck
+          generateCanvases();
         }
         return;
       }
 
-      if (!(await generateCanvases()) && attempt < maxAttempts) {
-        console.log(`Retrying canvas generation (attempt ${attempt}/${maxAttempts})...`);
-        setTimeout(() => checkTextures(attempt + 1, maxAttempts), 500);
-      }
+      // Always proceed after one attempt to avoid loops
+      await generateCanvases();
     };
 
     checkTextures();
-  }, [app, texturesLoaded, textureCache, setTextureCanvases]);
+  }, [app, texturesLoaded, textureCache, setTextureCanvases, setLoadingMessage]);
 
   // Generate tile canvases
   useEffect(() => {
@@ -292,6 +621,11 @@ const MainCanvas = ({
       });
       return;
     }
+    
+    // Update loading message
+    setLoadingMessage(`Generating previews for ${Object.keys(tileCache.current).length} tiles...`);
+    // Force loading state to be true
+    setLoading(true);
 
     console.log("Attempting tile canvas generation, renderer state:", {
       appExists: !!app,
@@ -371,7 +705,7 @@ const MainCanvas = ({
       return successCount > 0;
     };
 
-    const checkTileTextures = async (attempt = 1, maxAttempts = 10) => {
+    const checkTileTextures = async (attempt = 1, maxAttempts = 5) => {
       const allValid = Object.values(tileCache.current).every(
         (entry) => entry.texture.baseTexture.valid
       );
@@ -381,18 +715,18 @@ const MainCanvas = ({
           setTimeout(() => checkTileTextures(attempt + 1, maxAttempts), 500);
         } else {
           console.error("Failed to generate tile canvases: Textures not loaded after max attempts");
+          // Proceed anyway to avoid getting stuck
+          generateTileCanvases();
         }
         return;
       }
 
-      if (!(await generateTileCanvases()) && attempt < maxAttempts) {
-        console.log(`Retrying tile canvas generation (attempt ${attempt}/${maxAttempts})...`);
-        setTimeout(() => checkTileTextures(attempt + 1, maxAttempts), 500);
-      }
+      // Always proceed after one attempt to avoid loops
+      await generateTileCanvases();
     };
 
     checkTileTextures();
-  }, [app, tilesLoaded, tileCache, setTileCanvases]);
+  }, [app, tilesLoaded, tileCache, setTileCanvases, setLoadingMessage]);
 
   useMapInteractions({
     app,

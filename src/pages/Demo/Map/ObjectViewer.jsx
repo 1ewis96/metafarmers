@@ -19,6 +19,8 @@ const ObjectViewer = () => {
   const [loading, setLoading] = useState(true);
   const [texturesLoaded, setTexturesLoaded] = useState(false);
   const [tilesLoaded, setTilesLoaded] = useState(false);
+  const [assetsPlaced, setAssetsPlaced] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Initializing Map Resources...');
   const textureCache = useRef({});
   const tileCache = useRef({});
   const placedSprites = useRef([]);
@@ -33,6 +35,7 @@ const ObjectViewer = () => {
   const [tileCanvases, setTileCanvases] = useState({});
   const [spriteUpdateCounter, setSpriteUpdateCounter] = useState(0);
   const [gridBounds, setGridBounds] = useState({ width: 30, height: 30 }); // Default to 30x30
+  const [objectPropertiesCache, setObjectPropertiesCache] = useState({});
 
   const { fetchTexturesAndLayers } = useTextureLoader({
     setLoading,
@@ -112,6 +115,7 @@ const ObjectViewer = () => {
             placedSprites={placedSprites}
             placedTiles={placedTiles}
             setSpriteUpdateCounter={setSpriteUpdateCounter}
+            objectPropertiesCache={objectPropertiesCache}
           />
         )}
         <MainCanvas
@@ -135,8 +139,12 @@ const ObjectViewer = () => {
           setGridBounds={setGridBounds}
           layerDimensions={layerDimensions}
           availableLayers={availableLayers}
+          setObjectPropertiesCache={setObjectPropertiesCache}
+          setAssetsPlaced={setAssetsPlaced}
+          setLoadingMessage={setLoadingMessage}
+          setLoading={setLoading}
         />
-        {loading && <LoadingIndicator progress={loadingProgress} />}
+        {loading && <LoadingIndicator progress={loadingProgress} message={loadingMessage} />}
       </Container>
       <Minimap
         minimapContainer={minimapContainer}

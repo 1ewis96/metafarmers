@@ -18,7 +18,13 @@ const useInteractiveObjects = ({ currentLayer, worldContainerRef, gridContainerR
   
   // Fetch objects for the current layer
   const fetchObjects = useCallback(async () => {
-    if (!currentLayer) return;
+    if (!currentLayer) {
+      // Clear objects and collision map if no layer is selected
+      setObjects([]);
+      setCollisionMap({});
+      collisionMapRef.current = {};
+      return;
+    }
     
     setLoading(true);
     try {
@@ -102,6 +108,12 @@ const useInteractiveObjects = ({ currentLayer, worldContainerRef, gridContainerR
   
   // Load objects when layer changes
   useEffect(() => {
+    // Clear collision map when layer changes
+    setCollisionMap({});
+    collisionMapRef.current = {};
+    console.log('[Collision] Cleared collision map due to layer change');
+    
+    // Fetch objects for the new layer
     fetchObjects();
     
     // Debug: Log objects state after a delay to ensure it's updated
@@ -111,7 +123,7 @@ const useInteractiveObjects = ({ currentLayer, worldContainerRef, gridContainerR
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [currentLayer, fetchObjects, collisionMap]);
+  }, [currentLayer, fetchObjects]);
   
   // Create a door sprite for a door object
   const createDoorSprite = useCallback((object) => {

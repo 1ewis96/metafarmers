@@ -197,12 +197,12 @@ const useGridPosition = () => {
         y: gridY,                // Grid cell Y (integer)
         pixelX: Math.round(relativeX),  // Pixel position relative to grid
         pixelY: Math.round(relativeY),  // Pixel position relative to grid
-        cellX: cellX,            // Position within cell (0-1)
-        cellY: cellY,            // Position within cell (0-1)
+        cellX: parseFloat(cellX.toFixed(2)),  // Position within cell (0-1)
+        cellY: parseFloat(cellY.toFixed(2)),  // Position within cell (0-1)
         direction: direction,
         isMoving: moving && !isLocked,
         isSprinting: isSprinting,
-        isLocked: isLocked,
+        isLocked: isLocked
       };
     } catch (error) {
       console.error('[GridPosition] Error in calculateCharacterState:', error);

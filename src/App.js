@@ -6,7 +6,6 @@ import Home from './pages/Home';
 import Settings from './pages/Settings';
 import DemoMovement from './pages/Demo/Movement/MovementDemo';
 import ObjectViewer from './pages/Demo/Map/ObjectViewer';
-import HabboDemoPage from './pages/Client';
 import CognitoCallback from './hooks/auth/CognitoCallback';
 import CognitoCallbackClear from './hooks/auth/CognitoCallbackClear';
 
@@ -22,7 +21,6 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/demo/movement" element={<DemoMovement />} />
           <Route path="/demo/map" element={<ObjectViewer />} />
-          <Route path="/client" element={<HabboDemoPage />} />
           <Route path="/auth/callback" element={<CognitoCallback />} />
           <Route path="/auth/callback/clear" element={<CognitoCallbackClear />} />
         </Routes>

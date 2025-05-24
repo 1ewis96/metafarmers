@@ -28,12 +28,7 @@ const MenuBar = ({ visibleWindows, toggleWindow }) => {
         isActive={visibleWindows.skinSelector}
         onClick={() => toggleWindow('skinSelector')}
       />
-      <IconButton 
-        icon={faGaugeHigh} 
-        label="Speed Controls"
-        isActive={visibleWindows.speedControls}
-        onClick={() => toggleWindow('speedControls')}
-      />
+      {/* Speed controls button removed - using fixed Hotline Miami style values */}
       <IconButton 
         icon={faInfo} 
         label="Character State"

@@ -2,10 +2,24 @@ import React from 'react';
 import DraggableWindow from './DraggableWindow';
 
 const CharacterState = ({ characterState, onClose, windowId }) => {
-  // Get movement status
-  const movementStatus = characterState.isSprinting ? 'Sprinting' : characterState.isMoving ? 'Walking' : 'Idle';
-  const statusColor = characterState.isSprinting ? '#ff6b6b' : characterState.isMoving ? '#4dabf7' : '#adb5bd';
-  const progressValue = characterState.isSprinting ? 100 : characterState.isMoving ? 50 : 0;
+  // Get movement status from the state machine
+  const movementStatus = characterState.state ? characterState.state.charAt(0).toUpperCase() + characterState.state.slice(1) : 
+    (characterState.isSprinting ? 'Running' : characterState.isMoving ? 'Walking' : 'Idle');
+    
+  // Set colors based on state
+  const stateColors = {
+    idle: '#adb5bd',
+    walking: '#4dabf7',
+    running: '#ff6b6b',
+    interacting: '#82c91e'
+  };
+  
+  const statusColor = characterState.state ? stateColors[characterState.state] : 
+    (characterState.isSprinting ? '#ff6b6b' : characterState.isMoving ? '#4dabf7' : '#adb5bd');
+    
+  const progressValue = characterState.state === 'running' || characterState.isSprinting ? 100 : 
+    characterState.state === 'walking' || characterState.isMoving ? 50 : 
+    characterState.state === 'interacting' ? 75 : 0;
   
   return (
     <DraggableWindow 
@@ -55,6 +69,10 @@ const CharacterState = ({ characterState, onClose, windowId }) => {
               <tr>
                 <td style={{ padding: '4px 0' }}><strong>Sprinting:</strong></td>
                 <td style={{ textAlign: 'right' }}>{characterState.isSprinting ? 'Yes' : 'No'}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 0' }}><strong>State:</strong></td>
+                <td style={{ textAlign: 'right', textTransform: 'capitalize' }}>{characterState.state || 'Idle'}</td>
               </tr>
             </tbody>
           </table>

@@ -17,14 +17,14 @@ const MovementDemo = () => {
   const [skins, setSkins] = useState([]);
   const [selectedSkin, setSelectedSkin] = useState('');
   
-  // State for character movement
-  
+  // State for character movement - enhanced with state machine
   const [characterState, setCharacterState] = useState({
     x: 0,
     y: 0,
     direction: 'right',
     isMoving: false,
     isSprinting: false,
+    state: 'idle' // New state machine property: 'idle', 'walking', 'running', 'interacting'
   });
   
   // Reference to the teleport function
@@ -108,22 +108,8 @@ const MovementDemo = () => {
       return false;
     }
   };
-  // Character movement and animation speed settings with consistent controls
-  const [speed, setSpeed] = useState({
-    walk: 2.0,    // Default walking speed (0.5 = very slow, 5 = very fast)
-    sprint: 4.0,  // Default sprinting speed (1 = very slow, 10 = very fast)
-    animationFps: 8  // Animation frames per second (5 = slow animation, 20 = fast animation)
-  });
-  
-  // Handle speed changes from the TravelWindow
-  const handleSpeedChange = (newSpeedSettings) => {
-    console.log('[MovementDemo] Updating speed settings:', newSpeedSettings);
-    setSpeed({
-      walk: newSpeedSettings.walkSpeed,
-      sprint: newSpeedSettings.sprintSpeed,
-      animationFps: newSpeedSettings.animationFps
-    });
-  };
+  // Hotline Miami style has fixed speed values - no need for speed controls
+  // Speed values are now set directly in PixiCanvas component
   
   // Window visibility state - all windows closed by default
   const [visibleWindows, setVisibleWindows] = useState({
@@ -288,8 +274,6 @@ const MovementDemo = () => {
         <LoadingScreen progress={loadingProgress} message={loadingMessage} />
       )}
       <PixiCanvas
-        walkSpeed={speed.walk}
-        sprintSpeed={speed.sprint}
         onStateChange={setCharacterState}
         skinId={selectedSkin}
         onWorldContainerReady={handleWorldContainerReady}
@@ -330,14 +314,7 @@ const MovementDemo = () => {
         />
       )}
       
-      {visibleWindows.speedControls && (
-        <SpeedControls 
-          speed={speed} 
-          setSpeed={setSpeed} 
-          onClose={handleWindowClose}
-          windowId="speedControls"
-        />
-      )}
+      {/* Speed controls removed - using fixed Hotline Miami style values */}
       
       {visibleWindows.characterState && (
         <CharacterState 

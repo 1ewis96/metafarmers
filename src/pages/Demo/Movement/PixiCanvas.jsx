@@ -13,9 +13,7 @@ import useTeleportRef from './hooks/useTeleportRef';
 import { TILE_SIZE } from './utils/apiConfig';
 
 const PixiCanvas = ({ 
-  walkSpeed = 3, 
-  sprintSpeed = 6, 
-  animationFps = 12, // Add animationFps prop with default value
+  // Fixed Hotline Miami style speed values - no external controls needed
   onStateChange, 
   skinId, 
   onWorldContainerReady, 
@@ -23,6 +21,10 @@ const PixiCanvas = ({
   layerDimensions, 
   teleportRef 
 }) => {
+  // Hotline Miami style fixed speed values - increased for faster movement
+  const walkSpeed = 4.5;
+  const sprintSpeed = 9.0;
+  const animationFps = 12;
   // Container reference for the PIXI application
   const pixiContainer = useRef(null);
 
@@ -160,7 +162,7 @@ const PixiCanvas = ({
     teleportToCoordinates,
     updateGridSize
   });
-
+  
   // Update grid size when layer dimensions change
   React.useEffect(() => {
     updateGridSize(layerDimensions, currentLayer);
@@ -185,7 +187,7 @@ const PixiCanvas = ({
 
     const initializeCharacter = async () => {
       try {
-        // Load character
+        // Load character using the character controller
         const result = await loadCharacter(skinId);
         
         // If null was returned, it means loading is in progress or we're reusing existing sprite
@@ -198,26 +200,27 @@ const PixiCanvas = ({
           console.log('[Movement] Character sprite already in stage, skipping add');
           return;
         }
+        
+        // Add the character to the stage
+        appRef.current.stage.addChild(sprite);
+        
+        // Center the character on the screen
+        sprite.x = appRef.current.screen.width / 2;
+        sprite.y = appRef.current.screen.height / 2;
+        
+        console.log('[Movement] Character initialized and added to stage');
 
         // Find the grid container
         const gridContainer = gridContainerRef.current;
 
-        // Initialize world offset
-        initializeWorldOffset(appRef.current, gridContainer);
-
-        // Position the character in the center of the screen
-        sprite.x = appRef.current.screen.width / 2;
-        sprite.y = appRef.current.screen.height / 2;
-        appRef.current.stage.addChild(sprite);
-
         // Set the initial world container position
-        worldContainerRef.current.position.set(
-          gridSizeRef.current.worldOffset?.x || 0, 
-          gridSizeRef.current.worldOffset?.y || 0
-        );
+        // Character controller will handle updating this position
+        if (worldContainerRef.current) {
+          worldContainerRef.current.position.set(0, 0);
+        }
 
-        // Log grid size
-        console.log(`[Movement] Using grid size: ${gridSizeRef.current.width}x${gridSizeRef.current.height} tiles`);
+        // Log initialization success
+        console.log(`[Movement] Character successfully initialized with skin: ${skinId}`);
       } catch (error) {
         console.error(`[Movement] Error initializing character:`, error);
       }
@@ -232,13 +235,15 @@ const PixiCanvas = ({
       }
       cleanupCharacter();
     };
-  }, [appRef.current, worldContainerRef.current, loadCharacter, cleanupCharacter, skinId, initializeWorldOffset]);
+  }, [appRef.current, worldContainerRef.current, loadCharacter, cleanupCharacter, skinId]);
 
   return (
     <div 
       ref={pixiContainer} 
       style={{ width: '100vw', height: '100vh' }} 
       tabIndex={0} // Make the div focusable
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => { isFocused.current = false; }}
     />
   ); 
 };

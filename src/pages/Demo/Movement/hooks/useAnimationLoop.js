@@ -45,6 +45,16 @@ const useAnimationLoop = ({
 }) => {
   const animationTicker = useRef(null);
   const lastGridPosition = useRef({ x: -1, y: -1 });
+  const lastMovingState = useRef(false);
+  const lastSprintingState = useRef(false); // Store the latest speed values in refs to ensure they're always current
+  const walkSpeedRef = useRef(walkSpeed);
+  const sprintSpeedRef = useRef(sprintSpeed);
+
+  // Update refs when props change to ensure we always use the latest values
+  useEffect(() => {
+    walkSpeedRef.current = walkSpeed;
+    sprintSpeedRef.current = sprintSpeed;
+  }, [walkSpeed, sprintSpeed]);
 
   useEffect(() => {
     if (!appRef.current) return;
@@ -65,17 +75,13 @@ const useAnimationLoop = ({
           return;
         }
 
-        // Scale down delta to prevent super-fast movement
-        const scaledDelta = Math.min(delta, 1.0) * 0.2; // Cap delta and reduce speed by 80%
+        // Simple delta capping for consistent movement speed
+        const scaledDelta = Math.min(delta, 1.0) * 0.15;
         
-        // Use fixed base speeds and multiply by the speed settings
-        // This ensures consistent behavior when adjusting speeds
-        const baseWalkSpeed = 0.3; // Adjusted for better speed
-        const baseSprintSpeed = 0.6; // Adjusted for better speed
-        
-        // Calculate actual speeds with a balanced multiplier
-        const actualWalkSpeed = baseWalkSpeed * (walkSpeed / 3.0);
-        const actualSprintSpeed = baseSprintSpeed * (sprintSpeed / 3.0);
+        // Direct, simple speed calculation - no complex formulas
+        // Just use the speed values directly from props
+        const actualWalkSpeed = walkSpeed * 0.05;
+        const actualSprintSpeed = sprintSpeed * 0.05;
         
         const { vx, vy, moving, direction, isLocked, isSprinting } = 
           calculateMovement(actualWalkSpeed, actualSprintSpeed);
@@ -84,25 +90,28 @@ const useAnimationLoop = ({
         const scaledVx = vx * scaledDelta;
         const scaledVy = vy * scaledDelta;
         
-        // Log speed values when they change
-        if (appRef.current.ticker.lastTime % 1000 === 0 && moving) {
-          console.log(`[Speed] Walk: ${walkSpeed.toFixed(2)}, Sprint: ${sprintSpeed.toFixed(2)}, Moving: ${moving}, Sprinting: ${isSprinting}`);
-        }
+        // No logging in production to keep console clean
 
         // Update character direction if provided
         if (direction) {
           lastDirectionRef.current = direction;
         }
 
-        // Update animation with properly scaled delta
+        // Simple animation speed calculation
+        // Just use a direct multiplier based on whether sprinting or not
+        const animationSpeedFactor = isSprinting ? 1.8 : 1.0;
+        
+        // Update animation with simplified parameters
         const { elapsed: newElapsed, frame } = updateAnimation({
           isMoving: moving,
           isLocked,
           direction: lastDirectionRef.current,
           elapsed,
-          delta: scaledDelta, // Use scaled delta for consistent animation speed
-          fps: animationFps, // Use the dynamic animationFps parameter
-          framesPerDirection: framesPerDirection // Use the parameter value
+          delta: scaledDelta,
+          fps: animationFps,
+          framesPerDirection: framesPerDirection,
+          isSprinting: isSprinting,
+          speedFactor: animationSpeedFactor // Just pass a simple speed factor
         });
         
         elapsed = newElapsed;
@@ -134,61 +143,71 @@ const useAnimationLoop = ({
           isSprinting
         );
         
-        // Calculate the potential new position
-        const potentialOffset = updateWorldOffset(
-          appRef.current, 
-          gridContainerRef.current, 
-          scaledVx, 
-          scaledVy, 
-          moving, 
-          isLocked,
-          true // Just calculate, don't apply
-        );
-        
-        // Calculate what the grid position would be after movement
-        const potentialState = calculateCharacterState(
-          appRef.current,
-          gridContainerRef.current,
-          lastDirectionRef.current,
-          moving,
-          isLocked,
-          isSprinting,
-          potentialOffset
-        );
-        
-        // Check for collision at the potential position
-        let collisionDetected = false;
-        
-        // Only check for collision if we're actually trying to move and the collision function exists
-        if (moving && typeof hasCollision === 'function' && (potentialState.x !== currentState.x || potentialState.y !== currentState.y)) {
-          // Log the potential movement for debugging
-          console.log(`[Movement] Checking collision for move from (${currentState.x}, ${currentState.y}) to (${potentialState.x}, ${potentialState.y})`);
-          
-          // Check for collision at the target position
-          try {
-            collisionDetected = hasCollision(potentialState.x, potentialState.y);
-            
-            if (collisionDetected) {
-              console.log(`[Collision] Blocked movement to (${potentialState.x}, ${potentialState.y})`);
-            }
-          } catch (error) {
-            console.error('[Collision] Error checking for collision:', error);
-            collisionDetected = false; // Default to allowing movement if there's an error
-          }
-        }
-        
-        // Only update world position if not teleporting, not colliding, and world container is valid
-        if (!isTeleporting.current && !collisionDetected && worldContainerRef.current && worldContainerRef.current.transform) {
-          // Update world position based on scaled movement
-          const updatedOffset = updateWorldOffset(
+        // Only proceed with movement if we're actually moving and not teleporting
+        if (moving && !isTeleporting.current) {
+          // Calculate the potential new position
+          const potentialOffset = updateWorldOffset(
             appRef.current, 
             gridContainerRef.current, 
-            scaledVx, // Use scaled velocity
-            scaledVy, // Use scaled velocity
+            scaledVx, 
+            scaledVy, 
             moving, 
-            isLocked
+            isLocked,
+            true // Just calculate, don't apply
           );
-          worldContainerRef.current.position.set(updatedOffset.x, updatedOffset.y);
+          
+          // Calculate what the grid position would be after movement
+          const potentialState = calculateCharacterState(
+            appRef.current,
+            gridContainerRef.current,
+            lastDirectionRef.current,
+            moving,
+            isLocked,
+            isSprinting,
+            potentialOffset
+          );
+          
+          // Check for collision at the potential position
+          let collisionDetected = false;
+          
+          // Only check for collision if the position would actually change and the collision function exists
+          if (typeof hasCollision === 'function' && (potentialState.x !== currentState.x || potentialState.y !== currentState.y)) {
+            // Log the potential movement for debugging
+            if (appRef.current.ticker.lastTime % 1000 === 0) {
+              console.log(`[Movement] Checking collision for move from (${currentState.x}, ${currentState.y}) to (${potentialState.x}, ${potentialState.y})`);
+            }
+            
+            // Check for collision at the target position
+            try {
+              collisionDetected = hasCollision(potentialState.x, potentialState.y);
+              
+              if (collisionDetected) {
+                console.log(`[Collision] Blocked movement to (${potentialState.x}, ${potentialState.y})`);
+              }
+            } catch (error) {
+              console.error('[Collision] Error checking for collision:', error);
+              collisionDetected = false; // Default to allowing movement if there's an error
+            }
+          }
+          
+          // Only update world position if not colliding and world container is valid
+          if (!collisionDetected && worldContainerRef.current && worldContainerRef.current.transform) {
+            // Update world position based on scaled movement
+            const updatedOffset = updateWorldOffset(
+              appRef.current, 
+              gridContainerRef.current, 
+              scaledVx, // Use scaled velocity
+              scaledVy, // Use scaled velocity
+              moving, 
+              isLocked
+            );
+            
+            // Apply the position update
+            worldContainerRef.current.position.set(updatedOffset.x, updatedOffset.y);
+            
+            // Force the transform update to ensure the position change takes effect immediately
+            worldContainerRef.current.updateTransform();
+          }
         } else if (isTeleporting.current) {
           // Skip position update during teleportation
           console.log('[Teleport] Position update skipped - teleport in progress');
@@ -205,18 +224,59 @@ const useAnimationLoop = ({
               isLocked,
               isSprinting
             );
-            onStateChange(state);
             
-            // Check for step-on interactions if position has changed
-            if (state.x !== lastGridPosition.current.x || state.y !== lastGridPosition.current.y) {
-              console.log(`[Position] Moved to new cell: (${state.x}, ${state.y}) from (${lastGridPosition.current.x}, ${lastGridPosition.current.y})`);
-              lastGridPosition.current = { x: state.x, y: state.y };
+            // Add state property based on movement
+            if (moving) {
+              state.state = isSprinting ? 'running' : 'walking';
+            } else {
+              state.state = 'idle';
+            }
+            
+            // Only update state if grid position or movement state has changed
+            if (state.x !== lastGridPosition.current.x || 
+                state.y !== lastGridPosition.current.y ||
+                state.isMoving !== lastMovingState.current ||
+                state.isSprinting !== lastSprintingState.current) {
               
-              // Check for step-on interactions and handle teleport if needed
-              const stepOnResult = handleStepOn(state.x, state.y);
-              if (stepOnResult && stepOnResult.type === 'teleport' && onTeleport) {
-                console.log(`[Teleport] Triggering teleport to ${stepOnResult.layerId} (${stepOnResult.x}, ${stepOnResult.y})`);
-                onTeleport(stepOnResult.x, stepOnResult.y, stepOnResult.layerId);
+              // Update last grid position and movement state
+              const oldX = lastGridPosition.current.x;
+              const oldY = lastGridPosition.current.y;
+              lastGridPosition.current = { x: state.x, y: state.y };
+              lastMovingState.current = state.isMoving;
+              lastSprintingState.current = state.isSprinting;
+              
+              // Check for step-on interactions if position has changed
+              if ((state.x !== oldX || state.y !== oldY) && typeof handleStepOn === 'function') {
+                try {
+                  const stepOnResult = handleStepOn(state.x, state.y);
+                  if (stepOnResult && stepOnResult.type === 'teleport' && onTeleport) {
+                    console.log(`[Teleport] Triggering teleport to ${stepOnResult.layerId} (${stepOnResult.x}, ${stepOnResult.y})`);
+                    onTeleport(stepOnResult.x, stepOnResult.y, stepOnResult.layerId);
+                  }
+                } catch (error) {
+                  console.error('[Animation] Error handling step-on interaction:', error);
+                }
+              }
+              
+              // Ensure all position data is included
+              const fullState = {
+                ...state,
+                pixelX: state.pixelX || 0,
+                pixelY: state.pixelY || 0,
+                cellX: state.cellX || 0,
+                cellY: state.cellY || 0,
+                direction: lastDirectionRef.current,
+                isMoving: moving,
+                isSprinting: isSprinting,
+                state: state.state || 'idle'
+              };
+              
+              // Call the onStateChange callback with the full state
+              onStateChange(fullState);
+              
+              // Debug log state updates occasionally
+              if (appRef.current.ticker.lastTime % 1000 === 0 && moving) {
+                console.log('[Animation] Character state update:', fullState);
               }
             }
           } catch (error) {

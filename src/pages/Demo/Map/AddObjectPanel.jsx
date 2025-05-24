@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import DraggableWindow from "./DraggableWindow";
+import UploadModal from "./UploadModal";
 
 const AddObjectPanel = ({ textureCache, textureCanvases, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredObjects, setFilteredObjects] = useState([]);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const hasTextures = Object.keys(textureCache).length > 0;
   const hasCanvases = Object.keys(textureCanvases).length > 0;
 
@@ -22,32 +24,62 @@ const AddObjectPanel = ({ textureCache, textureCanvases, onClose }) => {
     setFilteredObjects(filtered);
   }, [searchTerm, textureCache, hasTextures]);
 
+  const handleUploadClick = () => {
+    setShowUploadModal(true);
+  };
+
+  const handleCloseUploadModal = () => {
+    setShowUploadModal(false);
+  };
+
   return (
-    <DraggableWindow 
-      title="Objects" 
-      onClose={onClose}
-      initialPosition={{ x: window.innerWidth - 280, y: 60 }}
-      zIndex={101}
-    >
-      <div className="search-container" style={{ marginBottom: "10px" }}>
-        <input
-          type="text"
-          placeholder="Search objects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+    <>
+      <DraggableWindow 
+        title="Objects" 
+        onClose={onClose}
+        initialPosition={{ x: window.innerWidth - 280, y: 60 }}
+        zIndex={101}
+      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <button
+          onClick={handleUploadClick}
           style={{
-            width: "100%",
-            padding: "8px",
+            width: "36px",
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#444",
+            color: "#fff",
             border: "1px solid #555",
             borderRadius: "4px",
-            background: "#333",
-            color: "#fff",
-            userSelect: "text",
-            WebkitUserSelect: "text",
-            MozUserSelect: "text",
-            msUserSelect: "text"
+            cursor: "pointer",
+            fontSize: "20px",
+            marginRight: "8px"
           }}
-        />
+        >
+          +
+        </button>
+        <div className="search-container" style={{ flex: 1 }}>
+          <input
+            type="text"
+            placeholder="Search objects..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              background: "#333",
+              color: "#fff",
+              userSelect: "text",
+              WebkitUserSelect: "text",
+              MozUserSelect: "text",
+              msUserSelect: "text"
+            }}
+          />
+        </div>
       </div>
 
       <div className="objects-container">
@@ -99,7 +131,14 @@ const AddObjectPanel = ({ textureCache, textureCanvases, onClose }) => {
           </div>
         )}
       </div>
-    </DraggableWindow>
+      </DraggableWindow>
+      
+      <UploadModal 
+        isOpen={showUploadModal}
+        onClose={handleCloseUploadModal}
+        type="object"
+      />
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DraggableWindow from "./DraggableWindow";
 import PropertiesModal from "./PropertiesModal";
 
@@ -9,8 +9,46 @@ const CellInfoPanel = ({
   placedSprites,
   placedTiles,
   setSpriteUpdateCounter,
+  objectPropertiesCache,
 }) => {
   const [isPropertiesModalOpen, setIsPropertiesModalOpen] = useState(false);
+  const [objectProperties, setObjectProperties] = useState(null);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Get object properties from cache when a cell is selected
+  useEffect(() => {
+    if (selectedCell && selectedCell.type === 'object' && currentLayer) {
+      getObjectPropertiesFromCache();
+    } else {
+      setObjectProperties(null);
+    }
+  }, [selectedCell, currentLayer, objectPropertiesCache]);
+
+  const getObjectPropertiesFromCache = () => {
+    if (!selectedCell || !currentLayer || selectedCell.type !== 'object') return;
+    
+    setLoadingProperties(true);
+    try {
+      // Create the composite key to look up in the cache
+      const compositeKey = `${selectedCell.objectName}#${selectedCell.x}#${selectedCell.y}`;
+      
+      // Get the object data from the cache
+      const objectData = objectPropertiesCache[compositeKey];
+      
+      if (objectData) {
+        setObjectProperties(objectData);
+        console.log("Retrieved object properties from cache:", objectData);
+      } else {
+        console.log("Object properties not found in cache for key:", compositeKey);
+        setObjectProperties(null);
+      }
+    } catch (error) {
+      console.error("Error retrieving object properties from cache:", error);
+      setObjectProperties(null);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
 
   const handleOpenPropertiesModal = () => {
     setIsPropertiesModalOpen(true);
@@ -18,6 +56,8 @@ const CellInfoPanel = ({
 
   const handleClosePropertiesModal = () => {
     setIsPropertiesModalOpen(false);
+    // Refresh properties after closing modal
+    getObjectPropertiesFromCache();
   };
 
   const handleApplyFunction = (functionType, updates) => {
@@ -26,6 +66,8 @@ const CellInfoPanel = ({
     // You might want to update the sprite appearance or add visual indicators
     // for objects with functions applied
     setSpriteUpdateCounter((prev) => prev + 1);
+    // Refresh properties
+    getObjectPropertiesFromCache();
   };
 
   const handleEject = async () => {
@@ -93,6 +135,85 @@ const CellInfoPanel = ({
         console.error("Error ejecting tile:", err);
       }
     }
+  };
+
+  const handleMove = () => {
+    if (!selectedCell) return;
+    
+    // Placeholder for move functionality
+    console.log(`Move ${selectedCell.type} at (${selectedCell.x}, ${selectedCell.y})`);
+    alert(`Move functionality will be implemented with the new API endpoint.`);
+  };
+
+  // Render property information
+  const renderPropertyInfo = () => {
+    if (!objectProperties) return null;
+
+    const propertyItems = [];
+
+    // Check for teleporter properties
+    if (objectProperties.action?.type === "teleport") {
+      propertyItems.push(
+        <div key="teleporter" style={{ marginBottom: "10px", padding: "6px", background: "#333", borderRadius: "4px" }}>
+          <p style={{ fontWeight: "bold", marginBottom: "4px" }}>Teleporter</p>
+          <p style={{ fontSize: "12px", margin: "2px 0" }}>
+            Activation: {objectProperties.activationType || "step_on"}
+          </p>
+          <p style={{ fontSize: "12px", margin: "2px 0" }}>
+            Destination: ({objectProperties.action.destination?.x || 0}, {objectProperties.action.destination?.y || 0})
+          </p>
+          {objectProperties.action.destination?.layerId && (
+            <p style={{ fontSize: "12px", margin: "2px 0" }}>
+              Layer: {objectProperties.action.destination.layerId}
+            </p>
+          )}
+          {objectProperties.action.destination?.facing && (
+            <p style={{ fontSize: "12px", margin: "2px 0" }}>
+              Facing: {objectProperties.action.destination.facing}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // Check for collision properties
+    if (objectProperties.collision === true) {
+      propertyItems.push(
+        <div key="collision" style={{ marginBottom: "10px", padding: "6px", background: "#333", borderRadius: "4px" }}>
+          <p style={{ fontWeight: "bold", marginBottom: "4px" }}>Collision</p>
+          <p style={{ fontSize: "12px", margin: "2px 0" }}>
+            Object blocks movement
+          </p>
+        </div>
+      );
+    }
+
+    // Check for door properties
+    if (objectProperties.door === true) {
+      propertyItems.push(
+        <div key="door" style={{ marginBottom: "10px", padding: "6px", background: "#333", borderRadius: "4px" }}>
+          <p style={{ fontWeight: "bold", marginBottom: "4px" }}>Door</p>
+          <p style={{ fontSize: "12px", margin: "2px 0" }}>
+            Can be opened/closed
+          </p>
+        </div>
+      );
+    }
+
+    if (propertyItems.length === 0) {
+      return (
+        <p style={{ fontSize: "12px", fontStyle: "italic", marginBottom: "10px" }}>
+          No properties set
+        </p>
+      );
+    }
+
+    return (
+      <div style={{ marginBottom: "10px" }}>
+        <p style={{ fontWeight: "bold", marginBottom: "6px" }}>Properties:</p>
+        {propertyItems}
+      </div>
+    );
   };
 
   const handleRotate = async () => {
@@ -205,6 +326,15 @@ const CellInfoPanel = ({
               <p style={{ marginBottom: "12px" }}>
                 <strong>Rotation:</strong> {selectedCell.rotation || 0}°
               </p>
+              
+              {loadingProperties ? (
+                <p style={{ fontSize: "12px", fontStyle: "italic", marginBottom: "10px" }}>
+                  Loading properties...
+                </p>
+              ) : (
+                renderPropertyInfo()
+              )}
+              
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <button 
                   onClick={handleEject}
@@ -231,6 +361,19 @@ const CellInfoPanel = ({
                   }}
                 >
                   Rotate
+                </button>
+                <button
+                  onClick={handleMove}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Move
                 </button>
                 <button
                   onClick={handleOpenPropertiesModal}
@@ -284,6 +427,19 @@ const CellInfoPanel = ({
                   }}
                 >
                   Rotate
+                </button>
+                <button
+                  onClick={handleMove}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#444",
+                    color: "#fff",
+                    border: "1px solid #555",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Move
                 </button>
               </div>
             </>
